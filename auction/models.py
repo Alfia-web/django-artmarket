@@ -24,6 +24,16 @@ class Image(models.Model):
     def __str__(self):
         return self.name
 
+class Rate(models.Model):
+    add_at = models.DateTimeField(auto_now_add=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    auction = models.ForeignKey('Auction', on_delete=models.CASCADE, null=True)
+
+    def clean(self):
+        if self.auction & self.auction.start_price > self.price:
+            raise ValidationError("Ставка не может быть меньше начальной цены аукциона")
+
 class Auction(models.Model):
     STATUS_CHOICES = [
         ('active', 'Активный'),
@@ -34,6 +44,10 @@ class Auction(models.Model):
     start_price = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     start_time = models.DateTimeField(null=True)
     end_time = models.DateTimeField(null=True)
+
+    class Meta:
+        verbose_name = "Аукцион"
+        verbose_name_plural = "Аукционы"
 
     def clean(self):
         if self.start_time and self.end_time:
@@ -47,19 +61,11 @@ class Auction(models.Model):
     image = models.ForeignKey(Image, on_delete=models.CASCADE, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 
-    class Meta:
-        verbose_name = "Аукцион"
-        verbose_name_plural = "Аукционы"
+    # считать ставку в реальном времени
+    # receive тоько в профайл 
 
     def __str__(self):
         return str(self.id)
-
-class Rate(models.Model):
-    add_at = models.DateTimeField(auto_now_add=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=1)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    auction = models.ForeignKey(Auction, on_delete=models.CASCADE, null=True)
-
 
 # у юзера точно есть профиль
 # тут типа топ инфа - паспорт и тд
