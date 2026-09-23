@@ -20,11 +20,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from auction import views
 from rest_framework.routers import DefaultRouter
-from auction.api import ImageViewset
-#роутер по сути
+from auction.api import *
 
 router = DefaultRouter()
 router.register("images", ImageViewset, basename="images") 
+router.register("auctions" ,AuctionViewset, basename="auctions")
+router.register("users", UserViewset, basename="users")
+router.register("rates" ,RateViewset, basename="rates")
+router.register("genres", GenreViewset, basename="genres")
 
 urlpatterns = [
     path('', views.ShowImagesView.as_view()),

@@ -30,10 +30,6 @@ class Rate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     auction = models.ForeignKey('Auction', on_delete=models.CASCADE, null=True)
 
-    def clean(self):
-        if self.auction & self.auction.start_price > self.price:
-            raise ValidationError("Ставка не может быть меньше начальной цены аукциона")
-
 class Auction(models.Model):
     STATUS_CHOICES = [
         ('active', 'Активный'),
@@ -72,13 +68,20 @@ class Auction(models.Model):
 # джанго только даст имя, имайл, пароль
 # в профиль ничё руками не добавляем
 # в админе запретить добавление !
-# class Profile(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
+class Profile(models.Model):
+    class Role(models.IntegerChoices):
+        undefined = 0
+        admin = 1
+        client = 2
 
-#     def __str__(self):
-#         return self.user.username if self.user else f"Profile {self.id}"
-    
-# @receiver(post_save, sender=User)
-# def on_user_create(sender, instance, created, *args, **kwards):
-#     if created:
-#         Profile.objects.create(user=instance)
+    user = models.OneToOneField("auth.User", on_delete=models.CASCADE, null=True, blank=True)
+    role = models.IntegerField("Роль", choices=Role, default=Role.undefined)
+
+    def __str__(self):
+        return self.user.username if self.user else f"Profile {self.id}"
+
+
+@receiver(post_save, sender=User)
+def on_user_create(sender, instance, created, *args, **kwargs):
+    if created:
+        Profile.objects.create(user=instance, role=Profile.Role.undefined)
