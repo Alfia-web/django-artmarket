@@ -1,159 +1,43 @@
 <script setup>
-import { ref, computed, onBeforeMount } from 'vue'
-import axios from "axios"
-import Cookies from 'js-cookie'
-import "bootstrap-icons/font/bootstrap-icons.min.css"
-import "bootstrap/dist/js/bootstrap.bundle.min.js"
+import router from './router';
 
-  onBeforeMount(() => {
-    axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
-  })
 
-  const imageToAdd  = ref({
-    name: '',
-    genre: null
-  });
-  const loading = ref(false)
-  const images = ref([])
-  const genres = ref([])
-
-  async function fetchImages() {
-    loading.value = true;
-    const r = await axios.get('/api/images/');
-    console.log(r.data)
-    images.value = r.data;
-    loading.value = false;
-  }
-
-  async function fetchGenres(){
-    loading.value = true;
-    const r = await axios.get('/api/genres/');
-    console.log(r.data)
-    genres.value = r.data;
-    loading.value = false;
-  }
-
-  async function onLoadClick(params) {
-    await fetchImages()
-  }
-
-  onBeforeMount(async () => {
-    await fetchImages();
-    await fetchGenres();
-  })
-
-  let c = computed(() => {
-    return a.value + b.value
-  })
-
-  async function onImageAdd(){
-    await axios.post("/api/images/", {
-      ...imageToAdd.value,
-    });
-    await fetchImages();
-  }
-
-  async function onRemoveClick(image){
-    await axios.delete(`/api/images/${image.id}/`)
-    await fetchImages();
-  }
-
-  </script>
-
-  <template>
-    <div>
-        <!-- ТУТ ПОДКЛЮЧИЛ обработчик отправки формы -->
-      <form @submit.prevent.stop="onImageAdd">
-        <div class="row">
-          <div class="col">
-            <div class="form-floating">
-              <!-- ТУТ ПОДКЛЮЧИЛ imageToAdd.name -->
-              <input
-                type="text"
-                class="form-control"
-                v-model="imageToAdd.name"
-                required
-              />
-              <label for="floatingInput">Имя</label>
-            </div>
-          </div>
-          <div class="col-auto">
-              <!-- А ТУТ ПОДКЛЮЧИЛ К select -->
-            <div class="form-floating">
-              <select class="form-select" v-model="imageToAdd.genre" required>
-                <option :value="g.id" v-for="g in genres">{{ g.name }}</option>
-              </select>
-              <label for="floatingInput">Жанры</label>
-            </div>
-          </div>
-          <div class="col-auto">
-            <button class="btn btn-primary">
-              Добавить
+</script>
+<template>
+   <div class="contain">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Navbar</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
             </button>
-          </div>
-        </div>
-      </form>
-
-      <div v-for="item in images" class="image-item">
-        {{item.name}}
-
-        кнопка редактировани
-        <button class="btn btn-success" 
-          data-bs-toggle='modal'
-          data-bs-target='#exampleModal'>
-          <i class="bi bi-pen"></i></button>
-        бустрап модальное окно
-        <div class="modal fade" id="exampleModal" tabindex="-1"
-          aria-labelledby="exampleModalLabel" aria-hidden="true">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">
-                  Редактирование картины
-                </h5>
-                <button
-                  type="button"
-                  class="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Закрыть"
-                ></button>
-              </div>
-              <div class="modal-body">
-                <input
-                  type="text" class="form-control" 
-                  placeholder="Название картины">
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary"
-                  data-bs-dismiss="modal">
-                  Закрыть
-                </button>
-                <button type="button"
-                  class="btn btn-primary">
-                  Сохранить
-                </button>
-              </div>
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav">
+                <li class="nav-item active">
+                  <router-link class="nav-link" to="/">Картины</router-link>  
+                </li>
+                <li class="nav-item">
+                    <router-link class="nav-link" to="/auctions">Аукционы</router-link>  
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Pricing</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Dropdown link
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                    <a class="dropdown-item" href="#">Action</a>
+                    <a class="dropdown-item" href="#">Another action</a>
+                    <a class="dropdown-item" href="#">Something else here</a>
+                    </div>
+                </li>
+                </ul>
             </div>
-          </div>
-        </div>
-
-        кнопка закрыть
-        <button class="btn btn-danger" @click="onRemoveClick(item)"><i class="bi bi-x"></i></button>
-      </div>
-
+            </nav>
     </div>
-  </template>
-
-  <style lang="scss" scoped>
-  .image-item{
-    padding: 0.5rem;
-    margin: 0.5rem 0;
-    border: 1px solid;
-    border-radius: 8px;
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: 8px;
-  }
-
-  </style>
+    <div class="container">
+      <router-view></router-view>
+    </div>
+</template>
+<style scoped>
+</style>
