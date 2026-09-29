@@ -1,0 +1,41 @@
+.image-item{
+    break-inside: avoid;
+}
+
+.img-grid{
+    margin-top: 20px;
+    columns: 4 200px;
+    column-gap: 16px;
+}
+
+.img-actions{
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.img-wrapper{
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.image-name {
+  padding: 8px 4px;
+  font-weight: 500;
+  color: #8EA66B;
+}
+
+.image-preview {
+  width: 100%;
+  height: auto;
+}
+
+.img-wrapper:hover .img-actions {
+  opacity: 1;          
+}

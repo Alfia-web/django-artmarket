@@ -13,7 +13,7 @@ import router from './router';
             <div class="collapse navbar-collapse" id="navbarNavDropdown">
                 <ul class="navbar-nav">
                 <li class="nav-item active">
-                  <router-link class="nav-link" to="/">Картины</router-link>  
+                  <router-link class="nav-link" to="/">Профиль</router-link>  
                 </li>
                 <li class="nav-item">
                     <router-link class="nav-link" to="/auctions">Аукционы</router-link>  

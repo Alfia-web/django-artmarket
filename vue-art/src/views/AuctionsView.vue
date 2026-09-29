@@ -5,11 +5,13 @@ import Cookies from 'js-cookie'
 import "bootstrap-icons/font/bootstrap-icons.min.css"
 import "bootstrap/dist/js/bootstrap.bundle.min.js"
 import "bootstrap/dist/css/bootstrap.min.css"
+import '../assets/style.scss'
 
   onBeforeMount(() => {
     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
   })
 
+  const imageFile = ref(null)
   const imageToAdd  = ref({
     name: '',
     genre: null
@@ -44,15 +46,17 @@ import "bootstrap/dist/css/bootstrap.min.css"
     await fetchGenres();
   })
 
-  let c = computed(() => {
-    return a.value + b.value
-  })
-
   async function onImageAdd(){
-    await axios.post("/api/images/", {
-      ...imageToAdd.value,
-    });
+    const formData = new FormData()
+    formData.append('name', imageToAdd.value.name);
+    formData.append('genre', imageToAdd.value.genre);
+    formData.append('image', imageFile.value);
+    await axios.post('/api/images/', formData)
     await fetchImages();
+  }
+
+  async function onFileChange(event) {
+    imageFile.value = event.target.files[0]
   }
 
   async function onRemoveClick(image){
@@ -101,6 +105,13 @@ import "bootstrap/dist/css/bootstrap.min.css"
             </div>
           </div>
           <div class="col-auto">
+            <div class="form-floating">
+              <input type="file" class="form-control" 
+              accept="image/*" required  @change="onFileChange">
+              <label>Картина</label>
+            </div>
+          </div>
+          <div class="col-auto">
             <button class="btn btn-primary">
               Добавить
             </button>
@@ -108,15 +119,28 @@ import "bootstrap/dist/css/bootstrap.min.css"
         </div>
       </form>
 
-      <div v-for="item in images" class="image-item">
-        {{item.name}}
+        <div class="img-grid">
+          <div v-for="item in images" class="image-item">
+            <div class="img-wrapper">
+              <img :src="item.image" :alt="item.name" class="image-preview">
+              <div class="img-actions">
+                <!-- кнопка редактировани -->
+                <button class="btn btn-success" 
+                @click="onImageEditClick(item)"
+                data-bs-toggle='modal'
+                data-bs-target='#exampleModal'>
+                <i class="bi bi-pen"></i></button>
 
-        <!-- кнопка редактировани -->
-        <button class="btn btn-success" 
-          @click="onImageEditClick(item)"
-          data-bs-toggle='modal'
-          data-bs-target='#exampleModal'>
-          <i class="bi bi-pen"></i></button>
+                <!-- кнопка закрыть -->
+                <button class="btn btn-danger" @click="onRemoveClick(item)"><i class="bi bi-x"></i></button>
+              </div>
+            </div>
+
+            <div class="image-name">
+              {{ item.name }}
+            </div>
+        </div>
+
         <!-- бустрап модальное окно  -->
         <div class="modal fade" id="exampleModal" tabindex="-1"
           aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -171,23 +195,9 @@ import "bootstrap/dist/css/bootstrap.min.css"
             </div>
           </div>
         </div>
-
-        <!-- кнопка закрыть -->
-        <button class="btn btn-danger" @click="onRemoveClick(item)"><i class="bi bi-x"></i></button>
       </div>
     </div>
   </template>
 
   <style lang="scss" scoped>
-  .image-item{
-    padding: 0.5rem;
-    margin: 0.5rem 0;
-    border: 1px solid;
-    border-radius: 8px;
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: 8px;
-  }
-
   </style>
