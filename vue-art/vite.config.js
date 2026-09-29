@@ -22,6 +22,9 @@ export default defineConfig({
       },
       '/media': {
         target: "http://localhost:8000"
+      },
+      '/admin': {
+        target: "http://localhost:8000"
       }
     }
   }

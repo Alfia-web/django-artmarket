@@ -4,8 +4,8 @@ import router from './router';
 
 </script>
 <template>
-   <div class="contain">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+   <div class="container">
+        <nav class="navbar navbar-expand-lg" style="background-color: #D8A2A2;">
             <a class="navbar-brand" href="#">Navbar</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -32,12 +32,25 @@ import router from './router';
                     </div>
                 </li>
                 </ul>
+                <ul class="navbar-nav">
+                 <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Пользователь </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/admin">Админка</a></li>
+                    </ul>
+                  </li>
+                </ul>
             </div>
-            </nav>
+        </nav>
     </div>
+
+
+
     <div class="container">
       <router-view></router-view>
     </div>
+
 </template>
 <style scoped>
 </style>

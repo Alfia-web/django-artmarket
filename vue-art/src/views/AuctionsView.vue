@@ -11,10 +11,12 @@ import '../assets/style.scss'
     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
   })
 
-  const imageFile = ref(null)
+  const imageFile = ref()
+  const imagePreview = ref('')
   const imageToAdd  = ref({
     name: '',
-    genre: null
+    genre: null,
+    image: null
   });
   const imageToEdit = ref([])
   const loading = ref(false)
@@ -37,10 +39,6 @@ import '../assets/style.scss'
     loading.value = false;
   }
 
-  async function onLoadClick(params) {
-    await fetchImages()
-  }
-
   onBeforeMount(async () => {
     await fetchImages();
     await fetchGenres();
@@ -50,13 +48,10 @@ import '../assets/style.scss'
     const formData = new FormData()
     formData.append('name', imageToAdd.value.name);
     formData.append('genre', imageToAdd.value.genre);
-    formData.append('image', imageFile.value);
-    await axios.post('/api/images/', formData)
-    await fetchImages();
-  }
+    formData.append('image', imageFile.value.files[0]);
 
-  async function onFileChange(event) {
-    imageFile.value = event.target.files[0]
+    await axios.post('/api/images/', formData);
+    await fetchImages();
   }
 
   async function onRemoveClick(image){
@@ -69,11 +64,25 @@ import '../assets/style.scss'
   }
 
   async function onUpdateImage() {
-    await axios.put(`/api/images/${imageToEdit.value.id}/`,{
-      name: imageToEdit.value.name,
-      genre: imageToEdit.value.genre
-    });
+     const formData = new FormData();
+
+    formData.append('name', imageToEdit.value.name);
+    formData.append('genre', imageToEdit.value.genre);
+
+    if (imageFile.value.files[0]) {
+        formData.append('image', imageFile.value.files[0]);
+    }
+
+    await axios.put(
+        `/api/images/${imageToEdit.value.id}/`,
+        formData
+    );
+
     await fetchImages();
+  }
+
+  async function onFileChange() {
+    imagePreview.value = URL.createObjectURL(imageFile.value.files[0])
   }
 
   </script>
@@ -107,9 +116,12 @@ import '../assets/style.scss'
           <div class="col-auto">
             <div class="form-floating">
               <input type="file" class="form-control" 
-              accept="image/*" required  @change="onFileChange">
+              accept="image/*" required  ref="imageFile" @change="onFileChange">
               <label>Картина</label>
             </div>
+          </div>
+          <div class="col-auto">
+              <img :src="imagePreview" style="max-height: 60px;" alt="">
           </div>
           <div class="col-auto">
             <button class="btn btn-primary">
@@ -182,6 +194,20 @@ import '../assets/style.scss'
                   </div>
                 </div>
               </div>
+              <!-- менять картинку -->
+              <div class="row">
+                <div class="col-auto">
+                  <div class="form-floating">
+                    <input type="file" class="form-control" 
+                    accept="image/*" required  ref="imageFile" @change="onFileChange">
+                    <label>Картина</label>
+                  </div>
+                </div>
+                <div class="col-auto">
+                    <img :src="imagePreview" style="max-height: 100px; padding-bottom: 4px;" alt="">
+                </div>
+              </div>
+
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary"
                   data-bs-dismiss="modal">
