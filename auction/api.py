@@ -3,15 +3,15 @@ from auction.models import *
 from rest_framework import mixins
 from auction.serializers import *
 
-class ImageViewset(
+class PictureViewset(
     mixins.ListModelMixin,
     mixins.CreateModelMixin, 
     mixins.DestroyModelMixin,
     mixins.UpdateModelMixin,
     GenericViewSet):
 
-    queryset = Image.objects.all()
-    serializer_class = ImageSerializer
+    queryset = Picture.objects.all()
+    serializer_class = PictureSerializer
 
 class AuctionViewset(
     mixins.ListModelMixin,

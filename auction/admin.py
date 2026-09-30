@@ -1,13 +1,13 @@
 from django.contrib import admin
 
-from auction.models import Image
+from auction.models import Picture
 from auction.models import Auction
 from auction.models import Genre
 from auction.models import Rate
 
 # Register your models here.
-@admin.register(Image)
-class ImageAdmin(admin.ModelAdmin):
+@admin.register(Picture)
+class PictureAdmin(admin.ModelAdmin):
     list_display = ['name', 'image'] 
 
 @admin.register(Auction)

@@ -11,7 +11,7 @@ class Genre(models.Model):
         return self.name
     
 # Create your models here.
-class Image(models.Model):
+class Picture(models.Model):
     name = models.TextField("Название")   
     image = models.ImageField("Картина",  upload_to='images/', null=True, blank=True)
     author = models.TextField("Автор", default="Неизвестный")
@@ -24,6 +24,10 @@ class Image(models.Model):
     def __str__(self):
         return self.name
 
+class Image(models.Model):
+    imageToAlbum = models.ImageField("Картина",  upload_to='images/', null=True, blank=True)
+    picture = models.ForeignKey(Picture, on_delete=models.CASCADE, null=True, related_name='album_images')
+ 
 class Rate(models.Model):
     add_at = models.DateTimeField(auto_now_add=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=1)
@@ -54,7 +58,7 @@ class Auction(models.Model):
             raise ValidationError("Победитель может быть назначен только после окончания торгов")
 
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    image = models.ForeignKey(Image, on_delete=models.CASCADE, null=True)
+    image = models.ForeignKey(Picture, on_delete=models.CASCADE, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 
     # считать ставку в реальном времени

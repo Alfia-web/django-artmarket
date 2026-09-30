@@ -11,8 +11,10 @@ import '../assets/style.scss'
     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
   })
 
-  const imageFile = ref()
+  const imageFile = ref([])
+  const editImageFile = ref()
   const imagePreview = ref('')
+  const imageToShow = ref()
   const imageToAdd  = ref({
     name: '',
     genre: null,
@@ -63,14 +65,18 @@ import '../assets/style.scss'
       imageToEdit.value = {...image};
   }
 
+  async function onImagePreviewClick(image) {
+    imageToShow.value = image
+  }
+
   async function onUpdateImage() {
      const formData = new FormData();
 
     formData.append('name', imageToEdit.value.name);
     formData.append('genre', imageToEdit.value.genre);
 
-    if (imageFile.value.files[0]) {
-        formData.append('image', imageFile.value.files[0]);
+    if (editImageFile.value.files[0]) {
+        formData.append('image', editImageFile.value.files[0]);
     }
 
     await axios.put(
@@ -82,7 +88,7 @@ import '../assets/style.scss'
   }
 
   async function onFileChange() {
-    imagePreview.value = URL.createObjectURL(imageFile.value.files[0])
+    imagePreview.value = URL.createObjectURL(imageFile.value.files)
   }
 
   </script>
@@ -116,7 +122,7 @@ import '../assets/style.scss'
           <div class="col-auto">
             <div class="form-floating">
               <input type="file" class="form-control" 
-              accept="image/*" required  ref="imageFile" @change="onFileChange">
+              accept="image/*"  ref="imageFile" multiple @change="onFileChange">
               <label>Картина</label>
             </div>
           </div>
@@ -131,29 +137,47 @@ import '../assets/style.scss'
         </div>
       </form>
 
-        <div class="img-grid">
-          <div v-for="item in images" class="image-item">
-            <div class="img-wrapper">
-              <img :src="item.image" :alt="item.name" class="image-preview">
-              <div class="img-actions">
-                <!-- кнопка редактировани -->
-                <button class="btn btn-success" 
-                @click="onImageEditClick(item)"
-                data-bs-toggle='modal'
-                data-bs-target='#exampleModal'>
-                <i class="bi bi-pen"></i></button>
+          <div class="img-grid">
+            <div v-for="item in images" class="image-item" @click="onImagePreviewClick(item)"
+            data-bs-toggle="modal" data-bs-target="#imageModal">
+              <div class="img-wrapper">
+                <img :src="item.image" :alt="item.name" class="image-preview">
+                <div class="img-actions">
+                  <!-- кнопка редактировани -->
+                  <button class="btn btn-success" 
+                  @click="onImageEditClick(item)"
+                  data-bs-toggle='modal'
+                  data-bs-target='#exampleModal'>
+                  <i class="bi bi-pen"></i></button>
 
-                <!-- кнопка закрыть -->
-                <button class="btn btn-danger" @click="onRemoveClick(item)"><i class="bi bi-x"></i></button>
+                  <!-- кнопка закрыть -->
+                  <button class="btn btn-danger" @click="onRemoveClick(item)"><i class="bi bi-x"></i></button>
+                </div>
+              </div>
+
+              <div class="image-name">
+                {{ item.name }}
               </div>
             </div>
+          </div>
 
-            <div class="image-name">
-              {{ item.name }}
+          <!-- бустрап модальное окно - посмотреть картинку поближе -->
+        <div class="modal fade" id="imageModal" tabindex="-1"
+            aria-labelledby="imageModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">{{ imageToShow?.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+              </div>
+              <div class="modal-body text-center">
+                <img v-if="imageToShow" :src="imageToShow.image" :alt="imageToShow.name" class="img-fluid">
+              </div>
             </div>
+          </div>
         </div>
 
-        <!-- бустрап модальное окно  -->
+        <!-- бустрап модальное окно - изменение картины -->
         <div class="modal fade" id="exampleModal" tabindex="-1"
           aria-labelledby="exampleModalLabel" aria-hidden="true">
           <div class="modal-dialog">
@@ -195,16 +219,16 @@ import '../assets/style.scss'
                 </div>
               </div>
               <!-- менять картинку -->
-              <div class="row">
+              <div class="row px-3">
                 <div class="col-auto">
                   <div class="form-floating">
                     <input type="file" class="form-control" 
-                    accept="image/*" required  ref="imageFile" @change="onFileChange">
+                    accept="image/*" required  ref="editImageFile" multiple @change="onFileChange">
                     <label>Картина</label>
                   </div>
                 </div>
                 <div class="col-auto">
-                    <img :src="imagePreview" style="max-height: 100px; padding-bottom: 4px;" alt="">
+                    <img :src="imagePreview" style="max-height: 70px; padding-bottom: 4px;" alt="">
                 </div>
               </div>
 
@@ -222,7 +246,6 @@ import '../assets/style.scss'
           </div>
         </div>
       </div>
-    </div>
   </template>
 
   <style lang="scss" scoped>

@@ -23,7 +23,7 @@ from rest_framework.routers import DefaultRouter
 from auction.api import *
 
 router = DefaultRouter()
-router.register("images", ImageViewset, basename="images") 
+router.register("images", PictureViewset, basename="images") 
 router.register("auctions" ,AuctionViewset, basename="auctions")
 router.register("users", UserViewset, basename="users")
 router.register("rates" ,RateViewset, basename="rates")

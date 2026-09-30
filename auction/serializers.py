@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from auction.models import Picture
 from auction.models import Image
 from auction.models import Genre
 from auction.models import Auction
@@ -10,11 +11,16 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genre
         fields = "__all__"
 
-class ImageSerializer(serializers.ModelSerializer):
+class PictureSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(read_only=True)
     class Meta:
-        model = Image
+        model = Picture
         fields = ['id', 'name', 'image', 'genre']
+
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        fields = ['id', 'image']
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
