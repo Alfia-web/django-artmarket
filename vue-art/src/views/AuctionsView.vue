@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onBeforeMount } from 'vue'
+import { ref, computed, onBeforeMount } from 'vue'
 import axios from "axios"
 import Cookies from 'js-cookie'
 import "bootstrap-icons/font/bootstrap-icons.min.css"
@@ -12,10 +12,23 @@ onBeforeMount(() => {
   axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
 })
 
-const imageFile = ref([])
+// const imageFile = ref([])
 const editImageFile = ref()
-const imagePreview = ref([])
-const showAlbumModal = ref(false)
+// const imagePreview = ref([])
+// const showAlbumModal = ref(false)
+
+const albumModalElement = ref(null)
+const moreInput = ref(null)
+const selectedFiles = ref([])
+const isUploading = ref(false)
+const editPreview = ref('')
+const imageToEdit = ref({})
+let nextId = 0
+
+const canUpload = computed(() =>
+  selectedFiles.value.length > 0 && imageToAdd.value.name.trim() !== '' &&
+  imageToAdd.value.genre !== null && !isUploading.value
+)
 
 const imageToShow = ref()
 const imageToAdd  = ref({
@@ -23,7 +36,7 @@ const imageToAdd  = ref({
   genre: null,
   image: null
 });
-const imageToEdit = ref([])
+
 const loading = ref(false)
 const images = ref([])
 const genres = ref([])
@@ -49,14 +62,38 @@ onBeforeMount(async () => {
   await fetchGenres();
 })
 
-async function onImageAdd(){
-  const formData = new FormData()
-  formData.append('name', imageToAdd.value.name);
-  formData.append('genre', imageToAdd.value.genre);
-  formData.append('image', imageFile.value.files[0]);
+async function onImageAdd(){''
+  if(!canUpload.value) {
+    return
+  }
+  isUploading.value = true
+  try{
+    const total = selectedFiles.value.length
+    await Promise.all(
+      selectedFiles.value.map((item, i)=>{
+        const formData = new FormData()
+        formData.append('name', total > 1 ? `${imageToAdd.value.name} ${i+1}` : imageToAdd.value.name);
+        formData.append('genre', imageToAdd.value.genre);
+        formData.append('image', item.file);
+        return axios.post('/api/images/', formData);
+      }))
+    await fetchImages();
+    clearSelection()
+    imageToAdd.value = {name: '', genre: null, image: null}
+    closeAlbumModal()
+  } 
+  catch(e){
+    console.error(e)
+    alert('Не удалось загрузить фотографии')
+  }
+  finally{
+    isUploading.value = false
+  }
+}
 
-  await axios.post('/api/images/', formData);
-  await fetchImages();
+function onEditFileChange(event){
+  const file = event.target.files[0]
+  editPreview.value = file ? URL.createObjectURL(file) : imageToEdit.value.image
 }
 
 async function onRemoveClick(image){
@@ -66,6 +103,10 @@ async function onRemoveClick(image){
 
 async function onImageEditClick(image) {
     imageToEdit.value = {...image};
+    editPreview.value =image.image
+    if(editImageFile.value){
+      editImageFile.value.value = ''
+    }
 }
 
 function onImagePreviewClick(image) {
@@ -93,17 +134,43 @@ async function onUpdateImage() {
   await fetchImages();
 }
 
-function onFileChange(event) {
-imagePreview.value = Array.from(event.target.files).map(file => ({
-  file: file,
-  url: URL.createObjectURL(file)
-  }))
-
-  const modalElemet = document.getElementById('albumModal')
-  const modal = Modal.getOrCreateInstance(modalElemet)
-  modal.show() 
+function openAlbumModal(){
+  Modal.getOrCreateInstance(albumModalElement.value).show()
 }
 
+function closeAlbumModal(){
+  Modal.getInstance(albumModalElement.value)?.hide()
+}
+
+function onFileChange(event) {
+   for (const file of event.target.files) {
+    selectedFiles.value.push({ id: nextId++, file, url: URL.createObjectURL(file) })
+  }
+  event.target.value = ''
+  openAlbumModal()
+}
+
+function removePreview(id){
+  const i = selectedFiles.value.findIndex(f=>f.id===id)
+  if(i===-1){
+    return
+  } 
+  URL.revokeObjectURL(selectedFiles.value[i].url)
+  selectedFiles.value.splice(i,1)
+  if(!selectedFiles.value.length) {
+    closeAlbumModal()
+  }
+}
+
+function clearSelection() {
+  selectedFiles.value.forEach(f => URL.revokeObjectURL(f.url))
+  selectedFiles.value = []
+}
+
+function onCancelAlbum() {
+  clearSelection()
+  closeAlbumModal()
+}
 </script>
 
 <template>
@@ -135,19 +202,17 @@ imagePreview.value = Array.from(event.target.files).map(file => ({
         <div class="col-auto">
           <div class="form-floating">
             <input type="file" class="form-control" 
-            accept="image/*"  ref="imageFile" multiple @change="onFileChange">
+            accept="image/*" multiple @change="onFileChange">
             <label>Картина</label>
           </div>
         </div>
-        <!-- <div class="col-auto d-flex gap-2">
-          <div v-for="preview in imagePreview" :key="preview">
-              <img :src="preview" style="max-height: 60px;" alt="">
-          </div>
-        </div> -->
-        <div class="col-auto">
-          <button class="btn btn-primary">
-            Добавить
+        <div class="col-auto" v-if="selectedFiles.length">
+          <button type="button" class="btn btn-outline-secondary" @click="openAlbumModal">
+            Фото: {{ selectedFiles.length }}
           </button>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-primary">Добавить</button>
         </div>
       </div>
     </form>
@@ -242,12 +307,12 @@ imagePreview.value = Array.from(event.target.files).map(file => ({
               <div class="col-auto">
                 <div class="form-floating">
                   <input type="file" class="form-control" 
-                  accept="image/*" required  ref="editImageFile" multiple @change="onFileChange">
+                  accept="image/*" required  ref="editImageFile"  @change="onEditFileChange">
                   <label>Картина</label>
                 </div>
               </div>
               <div class="col-auto">
-                  <img :src="imagePreview" style="max-height: 70px; padding-bottom: 4px;" alt="">
+                  <img v-if="editPreview" :src="editPreview" style="max-height: 70px;" alt="">
               </div>
             </div>
 
@@ -267,29 +332,54 @@ imagePreview.value = Array.from(event.target.files).map(file => ({
     </div>
 
     <!-- бустрап модальное окно - выбора картинок в альбом -->
-    <div class="modal fade" id="albumModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade" id="albumModal" ref="albumModalElement" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Выбранные картины</h5>
+            <h5 class="modal-title">Новый альбом ({{ selectedFiles.length }})</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
           </div>
+
           <div class="modal-body">
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <input type="text" class="form-control" placeholder="Название" v-model="imageToAdd.name">
+              </div>
+              <div class="col-auto">
+                <select class="form-select" v-model="imageToAdd.genre">
+                  <option :value="null" disabled>Жанр</option>
+                  <option v-for="g in genres" :key="g.id" :value="g.id">{{ g.name }}</option>
+                </select>
+              </div>
+            </div>
+
             <div class="row g-3">
-              <div v-for="p in imagePreview" :key="p.url" class="col-4">
-                <div class="card">
+              <div v-for="p in selectedFiles" :key="p.id" class="col-4">
+                <div class="card position-relative">
+                  <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                          style="z-index: 1" @click="removePreview(p.id)">
+                    <i class="bi bi-x"></i>
+                  </button>
                   <img :src="p.url" class="card-img-top"
                       style="height: 180px; object-fit: contain;" alt="Предпросмотр">
-                  <div class="card-body">
-                    <p class="card-text">{{ p.file.name }}</p>
+                  <div class="card-body p-2">
+                    <p class="card-text small text-truncate mb-0">{{ p.file.name }}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Сохранить</button>
+            <input type="file" class="d-none" accept="image/*" multiple
+                  ref="moreInput" @change="onFileChange">
+            <button type="button" class="btn btn-outline-secondary me-auto" @click="moreInput.click()">
+              Добавить ещё
+            </button>
+            <button type="button" class="btn btn-secondary" @click="onCancelAlbum">Отмена</button>
+            <button type="button" class="btn btn-primary" :disabled="!canUpload" @click="onImageAdd">
+              Загрузить
+            </button>
           </div>
         </div>
       </div>
