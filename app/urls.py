@@ -23,14 +23,14 @@ from rest_framework.routers import DefaultRouter
 from auction.api import *
 
 router = DefaultRouter()
-router.register("images", PictureViewset, basename="images") 
+router.register('images', views.PictureViewSet, basename='image')       
+router.register('album-images', views.AlbumImageViewSet, basename='album-image') 
 router.register("auctions" ,AuctionViewset, basename="auctions")
 router.register("users", UserViewset, basename="users")
 router.register("rates" ,RateViewset, basename="rates")
 router.register("genres", GenreViewset, basename="genres")
 
 urlpatterns = [
-    path('', views.ShowImagesView.as_view()),
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
 ]

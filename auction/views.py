@@ -1,15 +1,34 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from auction.models import Image
-from django.views import View
-from django.views.generic import TemplateView
-from typing import Any
-# Create your views here.
+from django.db import transaction
+from rest_framework import mixins, viewsets
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
-class ShowImagesView(View):
-    template_name = "images/show_image.html"
+from .models import Picture, Image
+from .serializers import PictureSerializer, AlbumImageSerializer
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        context['auction'] = ShowImagesView.objects.all()
-        return context
+
+class PictureViewSet(viewsets.ModelViewSet):
+    queryset = Picture.objects.prefetch_related('album_images')
+    serializer_class = PictureSerializer
+
+    def create(self, request, *args, **kwargs):
+        files = request.FILES.getlist('photos')
+      
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            user = request.user if request.user.is_authenticated else None
+            picture = serializer.save(user=user)
+            Image.objects.bulk_create(
+                [Image(picture=picture, imageToAlbum=f) for f in files]
+            )
+
+        picture = self.get_queryset().get(pk=picture.pk)
+        return Response(self.get_serializer(picture).data, status=201)
+
+class AlbumImageViewSet(mixins.CreateModelMixin,
+                        mixins.DestroyModelMixin,
+                        viewsets.GenericViewSet):
+    queryset = Image.objects.all()
+    serializer_class = AlbumImageSerializer

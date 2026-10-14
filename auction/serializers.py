@@ -11,16 +11,18 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genre
         fields = "__all__"
 
-class PictureSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(read_only=True)
-    class Meta:
-        model = Picture
-        fields = ['id', 'name', 'image', 'genre']
-
-class ImageSerializer(serializers.ModelSerializer):
+class AlbumImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = ['id', 'image']
+        fields = ['id', 'picture', 'imageToAlbum']
+
+class PictureSerializer(serializers.ModelSerializer):
+    album_images = AlbumImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Picture
+        fields = ['id', 'name', 'author', 'genre', 'user', 'image', 'album_images']
+        read_only_fields = ['user']
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
