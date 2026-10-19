@@ -25,7 +25,8 @@ const selectedFiles = ref([])
 const isUploading = ref(false)
 let nextId = 0
 
-const imageToShow = ref()
+const imageToShow = ref(null)
+const viewerKey = ref(0)
 const imageToEdit = ref({})
 
 const albumCreateModalElement = ref(null)
@@ -124,10 +125,11 @@ async function onAddImageToAlbum(event) {
   }
 }
 
-function onImagePreviewClick(image, index=0) {
-  const picture = image.album_images?.[index]
-  if (!picture) return
-  imageToShow.value = { name: image.name, url: picture.imageToAlbum }
+function onImagePreviewClick(item, index = 0) {
+  const photos = item.album_images ?? []
+  if (!photos.length) return
+  imageToShow.value = { name: item.name, photos, index }
+  viewerKey.value++
   Modal.getOrCreateInstance(imageShowModalElement.value).show()
 }
 
@@ -249,17 +251,44 @@ function onCancelAlbum() {
       </div>
     </div>
 
-        <!-- бустрап модальное окно - посмотреть картинку поближе -->
-      <div class="modal fade" id="imageModal" tabindex="-1"
-          aria-labelledby="imageModalLabel" aria-hidden="true" ref="imageShowModalElement">
-        <div class="modal-dialog modal-lg">
+       <div class="modal fade" id="imageModal" ref="imageShowModalElement" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="imageModalLabel">{{ imageToShow?.name }}</h5>
+              <h5 class="modal-title">{{ imageToShow?.name }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
-            <div class="modal-body text-center">
-              <img v-if="imageToShow" :src="imageToShow.url" :alt="imageToShow.name" class="img-fluid">
+
+            <div class="modal-body p-0">
+              <div v-if="imageToShow" :key="viewerKey" id="viewerCarousel"
+                  class="carousel slide viewer-carousel" data-bs-interval="false">
+
+                <div v-if="imageToShow.photos.length > 1" class="carousel-indicators">
+                  <button v-for="(photo, i) in imageToShow.photos" :key="photo.id" type="button"
+                          data-bs-target="#viewerCarousel" :data-bs-slide-to="i"
+                          :class="{ active: i === imageToShow.index }"
+                          :aria-current="i === imageToShow.index ? 'true' : undefined"
+                          :aria-label="`Слайд ${i + 1}`"></button>
+                </div>
+
+                <div class="carousel-inner">
+                  <div v-for="(photo, i) in imageToShow.photos" :key="photo.id"
+                      class="carousel-item" :class="{ active: i === imageToShow.index }">
+                    <img :src="photo.imageToAlbum" :alt="imageToShow.name" class="d-block mx-auto viewer-img">
+                  </div>
+                </div>
+
+                <template v-if="imageToShow.photos.length > 1">
+                  <button class="carousel-control-prev" type="button"
+                          data-bs-target="#viewerCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                  </button>
+                  <button class="carousel-control-next" type="button"
+                          data-bs-target="#viewerCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                  </button>
+                </template>
+              </div>
             </div>
           </div>
         </div>
