@@ -1,5 +1,33 @@
 <script setup>
 import router from '@/router';
+import axios from 'axios';
+import { onBeforeMount, ref } from 'vue';
+import useProfileStore from '@/stores/profileStore';
+import { storeToRefs } from 'pinia';
+
+// const isAuthenticated = ref(false)
+// const userName = ref()
+
+// async function fetchMe(){
+//     const r = await axios.get("/api/profile/me/")
+//     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
+//     isAuthenticated.value = r.data.is_authenticated
+//     userName.value = r.data.is_authenticated ? r.data.userName : null
+// }
+
+// onBeforeMount(()=>{
+//     fetchMe()
+// })
+
+const profileStore = useProfileStore()
+const{
+    isAuthenticated,
+    userName
+} = storeToRefs(profileStore)
+
+async function onLogoutButtonClick(params) {
+    profileStore.logout()
+}
 
 </script>
 <template>
@@ -11,7 +39,7 @@ import router from '@/router';
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNavDropdown">
-                    <ul class="navbar-nav">
+                    <ul class="navbar-nav me-auto">
                     <li class="nav-item active">
                     <router-link class="nav-link" to="/">Профиль</router-link>  
                     </li>
@@ -32,7 +60,13 @@ import router from '@/router';
                         </div>
                     </li> -->
                     </ul>
-                
+                    <div>
+                        Авторизован ли: {{ userName }}
+                        <button v-if="isAuthenticated" class="btn btn-outline-success" 
+                            @click="onLogoutButtonClick">
+                            Выйти
+                        </button>
+                    </div>
                 </div>
             </nav>
         </div>
