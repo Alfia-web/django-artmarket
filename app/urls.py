@@ -29,6 +29,7 @@ router.register("auctions" ,AuctionViewset, basename="auctions")
 router.register("users", UserViewset, basename="users")
 router.register("rates" ,RateViewset, basename="rates")
 router.register("genres", GenreViewset, basename="genres")
+router.register("profile", ProfileViewset, basename="profile")
 
 urlpatterns = [
     path('admin/', admin.site.urls),

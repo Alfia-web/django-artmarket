@@ -3,9 +3,9 @@ from rest_framework import mixins, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from .models import Picture, Image
+from .models import Picture, Image, Profile, User
 from .serializers import PictureSerializer, AlbumImageSerializer
-
+from rest_framework.viewsets import GenericViewSet
 
 class PictureViewSet(viewsets.ModelViewSet):
     queryset = Picture.objects.prefetch_related('album_images')
@@ -32,3 +32,4 @@ class AlbumImageViewSet(mixins.CreateModelMixin,
                         viewsets.GenericViewSet):
     queryset = Image.objects.all()
     serializer_class = AlbumImageSerializer
+
