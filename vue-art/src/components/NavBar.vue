@@ -22,7 +22,7 @@ import { storeToRefs } from 'pinia';
 const profileStore = useProfileStore()
 const{
     isAuthenticated,
-    userName
+    username
 } = storeToRefs(profileStore)
 
 async function onLogoutButtonClick(params) {
@@ -40,11 +40,11 @@ async function onLogoutButtonClick(params) {
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNavDropdown">
                     <ul class="navbar-nav me-auto">
-                    <li class="nav-item active">
-                    <router-link class="nav-link" to="/">Профиль</router-link>  
-                    </li>
                     <li class="nav-item">
                         <router-link class="nav-link" to="/auctions">Аукционы</router-link>  
+                    </li>
+                    <li class="nav-item active">
+                    <router-link class="nav-link" to="/">Профиль</router-link>  
                     </li>
                     <li class="nav-item">
                         <router-link  class="nav-link"   to="/login">Вход</router-link>
@@ -61,8 +61,9 @@ async function onLogoutButtonClick(params) {
                     </li> -->
                     </ul>
                     <div>
-                        Авторизован ли: {{ userName }}
-                        <button v-if="isAuthenticated" class="btn btn-outline-success" 
+                        <span v-if="isAuthenticated">Вы авторизованы как : {{ username }}</span>
+                        <span v-else>Вы не авторизованы</span>
+                        <button v-if="isAuthenticated" class="btn btn-outline-success " 
                             @click="onLogoutButtonClick">
                             Выйти
                         </button>

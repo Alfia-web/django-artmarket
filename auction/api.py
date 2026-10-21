@@ -18,6 +18,11 @@ class PictureViewset(
     queryset = Picture.objects.all()
     serializer_class = PictureSerializer
 
+    @action(detail=False, url_path="my", methods=['POST'])
+    def my_picture(self, request):
+        user_pictures = self.get_queryset().filter(user=request.user)
+        serializer = self.get_serializer(user_pictures, many=True)
+
 class AuctionViewset(
     mixins.ListModelMixin,
     mixins.CreateModelMixin, 
@@ -37,6 +42,14 @@ class UserViewset(
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        
+        # фильтруем по текущему юзеру
+        qs = qs.filter(user=self.request.user)
+
+        return qs
 
 class RateViewset(
     mixins.ListModelMixin,
@@ -91,6 +104,9 @@ class ProfileViewset(GenericViewSet):
             success = True
             status_code = 200
             django_login(self.request, user)
+        else:
+            success = False
+            status_code = 400
 
         return Response({
             'success': success

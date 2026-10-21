@@ -4,6 +4,7 @@ from auction.models import Picture
 from auction.models import Auction
 from auction.models import Genre
 from auction.models import Rate
+from auction.models import Profile
 
 # Register your models here.
 @admin.register(Picture)
@@ -21,3 +22,7 @@ class GenreAdmin(admin.ModelAdmin):
 @admin.register(Rate)
 class RateAdmin(admin.ModelAdmin):
     list_display = ['id', 'auction', 'user', 'price', 'add_at']
+
+@admin.register(Profile)
+class Profile(admin.ModelAdmin):
+    list_display = ['id', 'user', 'role']

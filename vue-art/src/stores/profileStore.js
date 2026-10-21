@@ -1,23 +1,28 @@
 import { defineStore } from "pinia"
 import {ref, onBeforeMount} from 'vue'
+import axios from 'axios'
+import Cookies from 'js-cookie'
 
 const useProfileStore = defineStore('profileStore',()=>{
     const isAuthenticated = ref(false)
-    const userName = ref()
+    const username = ref()
+
+    axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
+    axios.defaults.baseURL = 'http://localhost:8000/'
+    axios.defaults.withCredentials = true
 
     async function fetchMe(){
         const r = await axios.get("/api/profile/me/")
-        axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
         isAuthenticated.value = r.data.is_authenticated
-        userName.value = r.data.is_authenticated ? r.data.userName : null
+        username.value = r.data.is_authenticated ? r.data.username : null
     }
 
     async function login(username, password) {
-        console.log(username.value)
-        console.log(password.value)
-        const r = axios.post('/api/profile/login',{
-            username: username.value,
-            password: password.value,
+        console.log(username)
+        console.log(password)
+        const r = await axios.post('/api/profile/login/',{
+            username: username,
+            password: password,
         })
         fetchMe()
     }
@@ -33,7 +38,7 @@ const useProfileStore = defineStore('profileStore',()=>{
 
     return{
         isAuthenticated,
-        userName,
+        username,
 
         fetchMe, 
         login,

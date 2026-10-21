@@ -2,7 +2,7 @@
 import axios from 'axios'
 import {ref} from 'vue'
 
-import { P } from 'vue-router/dist/index-D7ja2BKs.js'
+import { useRouter, useRoute } from 'vue-router'
 import useProfileStore from '@/stores/profileStore';
 
 

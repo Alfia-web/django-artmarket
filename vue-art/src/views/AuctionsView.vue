@@ -189,7 +189,7 @@ function onCancelAlbum() {
 <template>
   <div class="container mt-4">
       <!-- ТУТ ПОДКЛЮЧИЛ обработчик отправки формы -->
-    <form @submit.prevent.stop="onImageAdd">
+    <!-- <form @submit.prevent.stop="onImageAdd">
       <div class="row">
         <div class="col-auto">
           <div class="form-floating">
@@ -207,7 +207,7 @@ function onCancelAlbum() {
           <button class="btn btn-primary">Добавить</button>
         </div>
       </div>
-    </form>
+    </form> -->
 
     <div class="img-grid">
       <div v-for="item in images" :key="item.id" class="image-item">
