@@ -43,8 +43,7 @@ const editAlbom = computed(() =>
   images.value.find(i => i.id === imageToEdit.value.id)?.album_images ?? []
 )
 
-async function fetchImages() {
-  loading.value = true;
+async function fetchImages() {  loading.value = true;
   const r = await axios.get('/api/images/');
   console.log(r.data)
   images.value = r.data;
@@ -69,7 +68,6 @@ async function onImageAdd(){
     return
   }
   isUploading.value = true
-  try{
     const formData = new FormData()
     formData.append('name', imageToAdd.value.name)
     formData.append('genre', imageToAdd.value.genre)
@@ -81,14 +79,8 @@ async function onImageAdd(){
     clearSelection()
     imageToAdd.value = { name: '', genre: null }
     closeAlbumModal()
-  } 
-  catch(e){
-    console.error(e)
-    alert('Не удалось загрузить фотографии')
-  }
-  finally{
     isUploading.value = false
-  }
+
 }
 
 // function onEditFileChange(event){
@@ -110,19 +102,13 @@ async function onAddImageToAlbum(event) {
   const files  = Array.from(event.target.files)
   event.target.value = ''
   if(!files.length)  return
-  try{
-    await Promise.all(files.map(file=>{
-      const fd = new FormData()
-      fd.append('picture', imageToEdit.value.id)
-      fd.append('imageToAlbum', file)
-      return axios.post('/api/album-images/', fd)
-    }))
-    await fetchImages()
-  }
-  catch(e){
-    console.error(e.response?.data ?? e)
-    alert('Не удалось добавить фотографии')
-  }
+  await Promise.all(files.map(file=>{
+    const fd = new FormData()
+    fd.append('picture', imageToEdit.value.id)
+    fd.append('imageToAlbum', file)
+    return axios.post('/api/album-images/', fd)
+  }))
+  await fetchImages()
 }
 
 function onImagePreviewClick(item, index = 0) {
@@ -187,6 +173,7 @@ function onCancelAlbum() {
 </script>
 
 <template>
+  <div>
   <div class="container mt-4">
       <!-- ТУТ ПОДКЛЮЧИЛ обработчик отправки формы -->
     <!-- <form @submit.prevent.stop="onImageAdd">
@@ -231,7 +218,7 @@ function onCancelAlbum() {
                 </button>
               </div>
 
-              <div class="img-actions" @click.stop>
+              <!-- <div class="img-actions" @click.stop>
                 <button type="button" class="btn btn-success" @click="onImageEditClick(item)"
                         data-bs-toggle="modal" data-bs-target="#exampleModal">
                   <i class="bi bi-pen"></i>
@@ -241,7 +228,7 @@ function onCancelAlbum() {
                       @click.stop="onRemoveClick(item)">
                 <i class="bi bi-x"></i>
               </button>
-            </div>
+            </div> -->
           </div>
             <div class="image-name">
               {{ item.name }}
@@ -411,6 +398,7 @@ function onCancelAlbum() {
               </div>
             </div>
           </div>
+        </div>
 
           <div class="modal-footer">
             <input type="file" class="d-none" accept="image/*" multiple

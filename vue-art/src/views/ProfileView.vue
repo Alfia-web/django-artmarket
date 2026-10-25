@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onBeforeMount } from 'vue'
+import { ref, computed, onBeforeMount, watch } from 'vue'
 import axios from "axios"
 import Cookies from 'js-cookie'
 import "bootstrap-icons/font/bootstrap-icons.min.css"
@@ -7,10 +7,15 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js"
 import "bootstrap/dist/css/bootstrap.min.css"
 import { Modal } from "bootstrap"
 import '../assets/style.scss'
+import useProfileStore from '@/stores/profileStore'
+import { storeToRefs } from 'pinia'
+import PictureViewer from '@/components/PictureViewer.vue'
 
 onBeforeMount(() => {
   axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
 })
+
+const {isAuthenticated} = storeToRefs(useProfileStore())
 
 const loading = ref(false)
 const images = ref([])
@@ -25,12 +30,12 @@ const selectedFiles = ref([])
 const isUploading = ref(false)
 let nextId = 0
 
-const imageToShow = ref(null)
-const viewerKey = ref(0)
+// const imageToShow = ref(null)
+// const viewerKey = ref(0)
 const imageToEdit = ref({})
 
 const albumCreateModalElement = ref(null)
-const imageShowModalElement = ref(null)
+// const imageShowModalElement = ref(null)
 const moreInput = ref(null) 
 const addPhotosInput = ref(null) 
 
@@ -43,13 +48,22 @@ const editAlbom = computed(() =>
   images.value.find(i => i.id === imageToEdit.value.id)?.album_images ?? []
 )
 
-async function fetchImages() {
-  loading.value = true;
-  const r = await axios.get('/api/images/');
-  console.log(r.data)
-  images.value = r.data;
-  loading.value = false;
+async function fetchMyPictures(){
+    if(!isAuthenticated.value) {
+      images.value = []
+      return
+    }
+    loading.value = true;
+    const r = await axios.get('/api/images/my/');
+    images.value = r.data;
+    console.log(r.data)
+    images.value = r.data;
+    loading.value = false;
 }
+
+// следит за изменением определенного значения
+// immediate - срабоатть сразу, а не ждать первое изменение параметра 
+watch(isAuthenticated, fetchMyPictures, {immediate: true})
 
 async function fetchGenres(){
   loading.value = true;
@@ -59,36 +73,23 @@ async function fetchGenres(){
   loading.value = false;
 }
 
-onBeforeMount(async () => {
-  await fetchImages();
-  await fetchGenres();
-})
+onBeforeMount(fetchGenres)
 
 async function onImageAdd(){
-  if(!canUpload.value) {
-    return
-  }
+  if(!canUpload.value) return
   isUploading.value = true
-  try{
     const formData = new FormData()
     formData.append('name', imageToAdd.value.name)
     formData.append('genre', imageToAdd.value.genre)
     selectedFiles.value.forEach(item => formData.append('photos', item.file))
 
     await axios.post('/api/images/', formData)
-    await fetchImages()
+    await fetchMyPictures()
 
     clearSelection()
     imageToAdd.value = { name: '', genre: null }
     closeAlbumModal()
-  } 
-  catch(e){
-    console.error(e)
-    alert('Не удалось загрузить фотографии')
-  }
-  finally{
     isUploading.value = false
-  }
 }
 
 // function onEditFileChange(event){
@@ -99,7 +100,7 @@ async function onImageAdd(){
 async function onDeleteImage(image){
   if (editAlbom.value.length <= 1) return
   await axios.delete(`/api/album-images/${image.id}/`)
-  await fetchImages()
+  await fetchMyPictures()
 }
 
 async function onImageEditClick(image) {
@@ -117,7 +118,7 @@ async function onAddImageToAlbum(event) {
       fd.append('imageToAlbum', file)
       return axios.post('/api/album-images/', fd)
     }))
-    await fetchImages()
+    await fetchMyPictures()
   }
   catch(e){
     console.error(e.response?.data ?? e)
@@ -125,26 +126,26 @@ async function onAddImageToAlbum(event) {
   }
 }
 
-function onImagePreviewClick(item, index = 0) {
-  const photos = item.album_images ?? []
-  if (!photos.length) return
-  imageToShow.value = { name: item.name, photos, index }
-  viewerKey.value++
-  Modal.getOrCreateInstance(imageShowModalElement.value).show()
-}
+// function onImagePreviewClick(item, index = 0) {
+//   const photos = item.album_images ?? []
+//   if (!photos.length) return
+//   imageToShow.value = { name: item.name, photos, index }
+//   viewerKey.value++
+//   Modal.getOrCreateInstance(imageShowModalElement.value).show()
+// }
 
 async function onUpdateImage() {
   await axios.patch(`/api/images/${imageToEdit.value.id}/`, {
     name: imageToEdit.value.name,
     genre: imageToEdit.value.genre,
   })
-  await fetchImages()
+  await fetchMyPictures()
 }
 
 async function onRemoveClick(item) {
   if (!confirm(`Удалить «${item.name}» вместе со всеми фото?`)) return
   await axios.delete(`/api/images/${item.id}/`)
-  await fetchImages()
+  await fetchMyPictures()
 }
 
 function openAlbumModal(){
@@ -213,14 +214,8 @@ function onCancelAlbum() {
       <div v-for="item in images" :key="item.id" class="image-item">
           <div>
             <div class="img-wrapper">
-              <div :id="`carousel-${item.id}`" class="carousel slide" data-ride="carousel">
-                <div class="carousel-inner">
-                  <div v-for="(photo, index) in item.album_images" :key="photo.id"
-                  class="carousel-item" :class="{ active: index === 0 }">
-                    <img :src="photo.imageToAlbum" :alt="item.name" class="image-preview"
-                      @click="onImagePreviewClick(item, index)">
-                  </div>
-                </div>
+              <PictureViewer :item="item" />
+        
                 <button v-if="item.album_images?.length>1" class="carousel-control-prev" type="button"
                     :data-bs-target="`#carousel-${item.id}`" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon"></span>
@@ -248,10 +243,9 @@ function onCancelAlbum() {
             </div>
           </div>
         </div>
-      </div>
     </div>
 
-       <div class="modal fade" id="imageModal" ref="imageShowModalElement" tabindex="-1" aria-hidden="true">
+       <!-- <div class="modal fade" id="imageModal" ref="imageShowModalElement" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
@@ -292,7 +286,7 @@ function onCancelAlbum() {
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- бустрап модальное окно - изменение картины -->
       <div class="modal fade" id="exampleModal" tabindex="-1"
@@ -427,6 +421,7 @@ function onCancelAlbum() {
       </div>
     </div>
 </template>
+
 
 <style lang="scss" scoped>
 </style>

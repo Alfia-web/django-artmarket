@@ -11,8 +11,6 @@ const profileStore = useProfileStore()
 const username = ref("")
 const password=ref("")
 
-
-
 async function onLoginClick(params) {
     profileStore.login(username.value, password.value)
     // console.log(username.value)
