@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onBeforeMount } from 'vue'
+import { ref, computed, onBeforeMount, onMounted } from 'vue'
 import axios from "axios"
 import Cookies from 'js-cookie'
 import "bootstrap-icons/font/bootstrap-icons.min.css"
@@ -7,6 +7,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js"
 import "bootstrap/dist/css/bootstrap.min.css"
 import { Modal } from "bootstrap"
 import '../assets/style.scss'
+import AuctionInfo from '@/components/AuctionInfo.vue'
 
 onBeforeMount(() => {
   axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
@@ -114,9 +115,20 @@ async function onAddImageToAlbum(event) {
 function onImagePreviewClick(item, index = 0) {
   const photos = item.album_images ?? []
   if (!photos.length) return
-  imageToShow.value = { name: item.name, photos, index }
+  imageToShow.value = { name: item.name, photos, index, item }
   viewerKey.value++
   Modal.getOrCreateInstance(imageShowModalElement.value).show()
+}
+
+const isOpen = ref(false)
+onMounted(() => {
+  const el = imageShowModalElement.value
+  el.addEventListener('show.bs.modal',   () => (isOpen.value = true))
+  el.addEventListener('hidden.bs.modal', () => (isOpen.value = false))
+})
+
+function onBid({ id, amount }) {
+  console.log('ставка', id, amount)   
 }
 
 async function onUpdateImage() {
@@ -264,6 +276,8 @@ function onCancelAlbum() {
                     <img :src="photo.imageToAlbum" :alt="imageToShow.name" class="d-block mx-auto viewer-img">
                   </div>
                 </div>
+
+                <AuctionInfo v-if="isOpen && imageToShow" :item="imageToShow.item" @bid="onBid" />
 
                 <template v-if="imageToShow.photos.length > 1">
                   <button class="carousel-control-prev" type="button"

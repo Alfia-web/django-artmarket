@@ -18,6 +18,8 @@ class AlbumImageSerializer(serializers.ModelSerializer):
 
 class PictureSerializer(serializers.ModelSerializer):
     album_images = AlbumImageSerializer(many=True, read_only=True)
+    user = serializers.CharField(source='user.username', read_only=True)
+    genre = serializers.CharField(source='genre.name', read_only=True)
 
     class Meta:
         model = Picture

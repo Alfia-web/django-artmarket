@@ -1,13 +1,14 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Modal } from 'bootstrap'
-
 // объявялет входной параметр 
 // required - родитель его передал
+import AuctionInfo from '@/components/AuctionInfo.vue'
+
 defineProps({
   item: { type: Object, required: true }
 })
-
+const emit = defineEmits(['bid'])
 const imageToShow = ref(null)
 const viewerKey = ref(0)
 const imageShowModalElement = ref(null)
@@ -19,6 +20,13 @@ function onImagePreviewClick(item, index = 0) {
   viewerKey.value++
   Modal.getOrCreateInstance(imageShowModalElement.value).show()
 }
+
+const isOpen = ref(false)
+onMounted(() => {
+  const el = imageShowModalElement.value
+  el.addEventListener('show.bs.modal',   () => (isOpen.value = true))
+  el.addEventListener('hidden.bs.modal', () => (isOpen.value = false))
+})
 </script>
 
 <template>
@@ -52,6 +60,7 @@ function onImagePreviewClick(item, index = 0) {
                             :aria-current="i === imageToShow.index ? 'true' : undefined"
                             :aria-label="`Слайд ${i + 1}`"></button>
                 </div>
+
 
                 <div class="carousel-inner">
                     <div v-for="(photo, i) in imageToShow.photos" :key="photo.id"
