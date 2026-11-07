@@ -22,11 +22,29 @@ class Command(BaseCommand):
 
         genres = list(Genre.objects.all())
 
-        for _ in range(10):
-            name = fake.word().capitalize()
-            response =  requests.get('https://picsum.photos/800/600')
-            if response.status_code==200:
+        response = requests.get(
+            'https://api.artic.edu/api/v1/artworks/search',
+            params={
+                "q": "painting",
+                "limit": 10,
+                "page": random.randint(1, 50),
+                "fields": "id,title,artist_title,image_id,is_public_domain",
+            },
+            headers={"User-Agent": "auction_/1.0 (student project)"},
+            timeout=15,
+        )
+        artworks = response.json()["data"]
+
+        for _ in artworks[:10]:
+            name = _["title"]
+            image_id = _["image_id"]
+            img_resp = requests.get(
+                'https://www.artic.edu/iiif/2/{image_id}/full/843,/0/default.jpg'.format(image_id=image_id),
+                headers={"User-Agent": "auction-seed/1.0 (student project)"},
+                timeout=30,
+            )
+            if img_resp.status_code==200:
                 picture = Picture.objects.create(name=name, user=user, genre=random.choice(genres))
                 img = Image(picture=picture)
-                img.imageToAlbum.save(f"{uuid.uuid4().hex}.jpg", ContentFile(response.content), save=True)
+                img.imageToAlbum.save(f"{uuid.uuid4().hex}.jpg", ContentFile(img_resp.content), save=True)
         

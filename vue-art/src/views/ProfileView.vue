@@ -26,6 +26,10 @@
   const images = ref([])
   const genres = ref([])
 
+  const imagesFiltered = computed(()=>{
+    return images.value
+  })
+
   const imageToAdd  = ref({
     name: '',
     genre: null,
@@ -235,7 +239,7 @@
       </form>
 
       <div class="img-grid">
-        <div v-for="item in images" :key="item.id" class="image-item">
+        <div v-for="item in imagesFiltered" :key="item.id" class="image-item">
                       <div>
             <div class="img-wrapper">
               <PictureViewer :item="item" />
@@ -258,7 +262,6 @@
           </div>
         </div>
         
-
         <!-- бустрап модальное окно - изменение картины -->
         <div class="modal fade" id="exampleModal" tabindex="-1"
           aria-labelledby="exampleModalLabel" aria-hidden="true">
