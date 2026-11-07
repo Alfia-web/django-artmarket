@@ -58,7 +58,7 @@ class Auction(models.Model):
             raise ValidationError("Победитель может быть назначен только после окончания торгов")
 
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    image = models.ForeignKey(Picture, on_delete=models.CASCADE, null=True)
+    image = models.OneToOneField(Picture, on_delete=models.CASCADE, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 
     # считать ставку в реальном времени

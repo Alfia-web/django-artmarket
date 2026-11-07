@@ -54,7 +54,6 @@ const fmtPrice = (v) => `${Number(v).toFixed(2)} ₽`
 
 const currentPrice = computed(() => auction.value.current_bid ?? auction.value.start_price)
 
-// ставка
 const bid = ref('')
 const canBid = computed(() => Number(bid.value) > currentPrice.value)
 

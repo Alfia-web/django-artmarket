@@ -16,7 +16,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         fake = Faker(['ru_RU'])
 
-        user = None
         if options['user']:
             User = get_user_model()
             user = User.objects.get(username=options['user'])
@@ -24,11 +23,10 @@ class Command(BaseCommand):
         genres = list(Genre.objects.all())
 
         for _ in range(10):
-            name = fake.name()
+            name = fake.word().capitalize()
             response =  requests.get('https://picsum.photos/800/600')
             if response.status_code==200:
                 picture = Picture.objects.create(name=name, user=user, genre=random.choice(genres))
                 img = Image(picture=picture)
-                img.imageToAlbum.save(f"{uuid.uuid4().hex}.jpg",
-                                        ContentFile(response.content), save=True)
+                img.imageToAlbum.save(f"{uuid.uuid4().hex}.jpg", ContentFile(response.content), save=True)
         

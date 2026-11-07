@@ -29,7 +29,10 @@
   const imageToAdd  = ref({
     name: '',
     genre: null,
-    image: null
+    image: null,
+    start_price: 1,
+    start_time: '',
+    end_time: '',
   });
   const selectedFiles = ref([])
   const isUploading = ref(false)
@@ -62,7 +65,6 @@
       const r = await axios.get('/api/images/my/');
       images.value = r.data;
       console.log(r.data)
-      images.value = r.data;
       loading.value = false;
   }
 
@@ -74,7 +76,7 @@
     loading.value = true;
     const r = await axios.get('/api/genres/');
     console.log(r.data)
-    genres.value = r.data;
+    genres.value = r.data.results;
     loading.value = false;
   }
 
@@ -86,13 +88,22 @@
       const formData = new FormData()
       formData.append('name', imageToAdd.value.name)
       formData.append('genre', imageToAdd.value.genre)
+      formData.append('start_price', imageToAdd.value.start_price)
+      formData.append('start_time', imageToAdd.value.start_time)
+      formData.append('end_time', imageToAdd.value.end_time)
       selectedFiles.value.forEach(item => formData.append('photos', item.file))
 
       await axios.post('/api/images/', formData)
       await fetchMyPictures()
 
       clearSelection()
-      imageToAdd.value = { name: '', genre: null }
+      imageToAdd.value = {  name: '',
+          genre: null,
+          image: null,
+          start_price: 1,
+          start_time: '',
+          end_time: ''
+        }
       closeAlbumModal()
       isUploading.value = false
   }
@@ -109,14 +120,18 @@
   }
 
   async function onImageEditClick(image) {
-      imageToEdit.value = { id: image.id, name: image.name, genre: image.genre }
+      const auction = image.auction
+      imageToEdit.value = { id: image.id, name: image.name, genre: image.genre,
+        auctionId: auction?.id ?? null, 
+        start_price: auction ?  Number(auction.start_price) : 1,
+        start_time:  auction ? toDateTimeLocal(auction.start_time): '',
+        end_time:  auction ? toDateTimeLocal(auction.end_time) : ''}
   }
 
   async function onAddImageToAlbum(event) {
     const files  = Array.from(event.target.files)
     event.target.value = ''
     if(!files.length)  return
-    try{
       await Promise.all(files.map(file=>{
         const fd = new FormData()
         fd.append('picture', imageToEdit.value.id)
@@ -124,11 +139,6 @@
         return axios.post('/api/album-images/', fd)
       }))
       await fetchMyPictures()
-    }
-    catch(e){
-      console.error(e.response?.data ?? e)
-      alert('Не удалось добавить фотографии')
-    }
   }
 
   // function onImagePreviewClick(item, index = 0) {
@@ -144,6 +154,15 @@
       name: imageToEdit.value.name,
       genre: imageToEdit.value.genre,
     })
+
+    const auctionData = {
+      start_price: imageToEdit.value.start_price,
+      start_time: imageToEdit.value.start_time,
+      end_time: imageToEdit.value.end_time
+    }
+
+      await axios.patch(`/api/auctions/${imageToEdit.value.auctionId}/`,auctionData
+      )
     await fetchMyPictures()
   }
 
@@ -278,6 +297,27 @@
                 </div>
               </div>
 
+              <!-- ставка -->
+              <div class="row g-2 mb-3">
+                <div class="col">
+                  <label class="form-label">Начальная ставка, ₽</label>
+                  <input type="number" class="form-control" v-model.number="imageToEdit.start_price"
+                    min="0.01" step="0.01"required>
+                </div>
+
+                <div class="col">
+                  <label class="form-label">Начало торгов</label>
+                  <input type="datetime-local" class="form-control"
+                    v-model="imageToAdd.start_time" required>
+                </div>
+
+                <div class="col">
+                  <label class="form-label">Окончание торгов</label>
+                  <input type="datetime-local" class="form-control"
+                   v-model="imageToEdit.end_time" required>
+                </div>
+              </div>
+
               <div class="row g-2 mb-3">
                 <div v-for="picture in editAlbom"
                     :key="picture.id" class="col-4">
@@ -357,6 +397,27 @@
                 </div>
               </div>
             </div>
+
+            <!-- ставка -->
+              <div class="row g-2 mb-3">
+                <div class="col">
+                  <label class="form-label">Начальная ставка, ₽</label>
+                  <input type="number" class="form-control" v-model.number="imageToEdit.start_price"
+                    min="0.01" step="0.01"required>
+                </div>
+
+                <div class="col">
+                  <label class="form-label">Начало торгов</label>
+                  <input type="datetime-local" class="form-control"
+                    v-model="imageToAdd.start_time" required>
+                </div>
+
+                <div class="col">
+                  <label class="form-label">Окончание торгов</label>
+                  <input type="datetime-local" class="form-control"
+                   v-model="imageToEdit.end_time" required>
+                </div>
+              </div>
 
             <div class="modal-footer">
               <input type="file" class="d-none" accept="image/*" multiple

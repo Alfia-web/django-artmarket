@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
     'auction',
     'corsheaders', 
+    "debug_toolbar",
 ]
 
 MIDDLEWARE = [
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'app.urls'
@@ -139,3 +141,12 @@ MAILERS = {
 CORS_ALLOWED_ORIGINS=["http://localhost:5173"]
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
 CORS_ALLOW_CREDENTIALS = True
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+}

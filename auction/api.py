@@ -8,20 +8,22 @@ from django.contrib.auth import logout as django_logout
 from django.contrib.auth import login as django_login
 from django.contrib.auth import authenticate
 
-class PictureViewset(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin, 
-    mixins.DestroyModelMixin,
-    mixins.UpdateModelMixin,
-    GenericViewSet):
+from rest_framework import mixins, viewsets
 
-    queryset = Picture.objects.all()
+class PictureViewSet(mixins.ListModelMixin,
+                     mixins.RetrieveModelMixin,
+                     viewsets.GenericViewSet):
+    queryset = (Picture.objects
+        .select_related('user', 'genre', 'auction', 'auction__winner').prefetch_related('album_images'))
     serializer_class = PictureSerializer
 
-    @action(detail=False, url_path="my", methods=['POST'])
+
+    @action(detail=False, url_path="my", methods=['GET'])
     def my_picture(self, request):
         user_pictures = self.get_queryset().filter(user=request.user)
         serializer = self.get_serializer(user_pictures, many=True)
+
+        return Response(serializer.data)
 
 class AuctionViewset(
     mixins.ListModelMixin,
@@ -30,7 +32,7 @@ class AuctionViewset(
     mixins.UpdateModelMixin,
     GenericViewSet):
 
-    queryset = Auction.objects.all()
+    queryset = Auction.objects.select_related('winner', 'image')
     serializer_class = AuctionSerializer
 
 class UserViewset(
@@ -58,7 +60,7 @@ class RateViewset(
     mixins.UpdateModelMixin,
     GenericViewSet):
 
-    queryset = Rate.objects.all()
+    queryset = Rate.objects.select_related('user', 'auction', 'auction__winner', 'auction__image')
     serializer_class = RateSerializer
 
 class GenreViewset(
@@ -72,7 +74,7 @@ class GenreViewset(
     serializer_class = GenreSerializer
 
 class ProfileViewset(GenericViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('id')
 
     @action(detail=False, url_path="me", methods=['GET'])
     def get_me(self, request, *args, **kwargs ):
@@ -87,7 +89,8 @@ class ProfileViewset(GenericViewSet):
                 "role": self.request.user.profile.role,
             })
 
-        return Response(data=data)
+        return Response(data)
+
 
     @action(detail=False, url_path="logout", methods=['POST'])
     def logout(self, *args, **kwargs):

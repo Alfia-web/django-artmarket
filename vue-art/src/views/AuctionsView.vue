@@ -47,7 +47,7 @@ const editAlbom = computed(() =>
 async function fetchImages() {  loading.value = true;
   const r = await axios.get('/api/images/');
   console.log(r.data)
-  images.value = r.data;
+  images.value = r.data.results;
   loading.value = false;
 }
 
@@ -55,7 +55,7 @@ async function fetchGenres(){
   loading.value = true;
   const r = await axios.get('/api/genres/');
   console.log(r.data)
-  genres.value = r.data;
+  genres.value = r.data.results;
   loading.value = false;
 }
 
