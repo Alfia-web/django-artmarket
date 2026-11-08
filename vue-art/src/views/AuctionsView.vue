@@ -44,11 +44,23 @@ const editAlbom = computed(() =>
   images.value.find(i => i.id === imageToEdit.value.id)?.album_images ?? []
 )
 
-async function fetchImages() {  loading.value = true;
-  const r = await axios.get('/api/images/');
-  console.log(r.data)
-  images.value = r.data.results;
-  loading.value = false;
+const page = ref(1)
+const hasNext = ref(false)
+
+async function fetchImages(reset = true) {
+  if (reset) page.value = 1
+  loading.value = true
+
+  const r = await axios.get('/api/images/', { params: { page: page.value } })
+  const list = r.data.results ?? r.data
+  images.value = reset ? list : [...images.value, ...list]
+  hasNext.value = !!r.data.next
+  loading.value = false
+}
+
+function loadMore() {
+  page.value++
+  return fetchImages(false)
 }
 
 async function fetchGenres(){
@@ -248,6 +260,9 @@ function onCancelAlbum() {
           </div>
         </div>
       </div>
+    </div>
+    <div class="text-center my-3" v-if="hasNext">
+      <button class="btn btn-outline-primary" @click="loadMore">Показать ещё</button>
     </div>
 
        <div class="modal fade" id="imageModal" ref="imageShowModalElement" tabindex="-1" aria-hidden="true">
