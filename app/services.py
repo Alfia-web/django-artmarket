@@ -8,7 +8,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
-from requests import Response
+from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 from auction.models import Auction, Image, Rate
@@ -42,11 +42,12 @@ def checkAucTime(auction):
 
     if now < auction.start_time:
         raise ValidationError("Торги ещё не начались")
-    else:
+    
+    if now >= auction.end_time:
         raise ValidationError("Торги уже завершены")
 
 def getCurrentPrice(auction):
-    lastRate = Rate.object.filter(auction=auction).order_by('-price', '-id').first()
+    lastRate = Rate.objects.filter(auction=auction).order_by('-price', '-id').first()
 
     if lastRate:
         return lastRate.price

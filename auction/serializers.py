@@ -26,7 +26,7 @@ class AuctionSerializer(serializers.ModelSerializer):
     winner = UserSerializer(read_only=True)
     class Meta:
         model = Auction
-        fields = ['id', 'start_price', 'start_time', 'end_time', 'winner']
+        fields = ['id', 'start_price', 'start_time', 'end_time', 'winner', 'image']
 
 class PictureSerializer(serializers.ModelSerializer):
     album_images = AlbumImageSerializer(many=True, read_only=True)

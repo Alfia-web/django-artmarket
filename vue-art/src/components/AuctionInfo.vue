@@ -68,7 +68,7 @@ function sendBid() {
 
 <template>
   <div class="auction-panel">
-    <!-- О картине -->
+    <!-- о картине -->
     <h6 class="section-title">О картине</h6>
     <div class="info-row">
       <span class="info-label">Название</span>
@@ -76,7 +76,7 @@ function sendBid() {
     </div>
     <div class="info-row">
       <span class="info-label">Продавец</span>
-      <span class="info-value">{{ item.user_name ?? 'Не указан' }}</span>
+      <span class="info-value">{{ item.user ?? 'Не указан' }}</span>
     </div>
     <div class="info-row">
       <span class="info-label">Жанр</span>

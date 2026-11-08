@@ -13,12 +13,12 @@ from rest_framework import pagination
 
 class PictureViewSet(mixins.ListModelMixin,
                      mixins.RetrieveModelMixin,
-                     viewsets.GenericViewSet):
+                     viewsets.GenericViewSet,
+                     mixins.CreateModelMixin):
     queryset = (Picture.objects
         .select_related('user', 'genre', 'auction', 'auction__winner').prefetch_related('album_images'))
     serializer_class = PictureSerializer
     pagination_class = pagination.LimitOffsetPagination
-
 
     @action(detail=False, url_path="my", methods=['GET'])
     def my_picture(self, request):

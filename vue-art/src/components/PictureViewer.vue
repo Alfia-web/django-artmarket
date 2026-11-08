@@ -8,7 +8,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['preview'])
-const carouselId = computed(()=> `${props.idPrefix} - ${props.item.id   }`)
+const carouselId = computed(() => `${props.idPrefix}-${props.item.id}`)
 const photos = computed(() => {
   if (props.item.album_images?.length) {
     return props.item.album_images.map(p => ({ id: p.id, src: p.imageToAlbum }))
@@ -18,7 +18,7 @@ const photos = computed(() => {
 </script>
 
 <template>
-  <div :id="`carousel-${item.id}`" class="carousel slide" data-bs-ride="false">
+  <div :id="carouselId" class="carousel slide" data-bs-ride="false">
     <div class="carousel-inner">
       <div  v-for="(photo, index) in photos" :key="photo.id"
         class="carousel-item" :class="{ active: index === 0 }">

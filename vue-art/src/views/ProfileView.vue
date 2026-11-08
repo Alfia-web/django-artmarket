@@ -157,11 +157,11 @@
     const auctionData = {
       image: imageToEdit.value.id,
       start_price: imageToEdit.value.start_price,
-      start_time: imageToEdit.value.start_time,
-      end_time: imageToEdit.value.end_time }
+      start_time: new Date(imageToEdit.value.start_time).toISOString(),
+      end_time: new Date(imageToEdit.value.end_time).toISOString(), }
 
     if(imageToEdit.value.auctionId){
-      await axios.patch(`/api/auctions/${imageToEdit.valuу.auctionId}/`, auctionData)
+      await axios.patch(`/api/auctions/${imageToEdit.value.auctionId}/`, auctionData)
     }
     else{
       const response = await axios.post('/api/auctions/', auctionData)
