@@ -26,17 +26,18 @@ class AuctionSerializer(serializers.ModelSerializer):
     winner = UserSerializer(read_only=True)
     class Meta:
         model = Auction
-        fields = ['id', 'start_price', 'start_time', 'end_time', 'status', 'winner']
+        fields = ['id', 'start_price', 'start_time', 'end_time', 'winner']
 
 class PictureSerializer(serializers.ModelSerializer):
     album_images = AlbumImageSerializer(many=True, read_only=True)
     user = serializers.CharField(source='user.username', read_only=True)
-    genre = serializers.CharField(source='genre.name', read_only=True)
+    genre = serializers.PrimaryKeyRelatedField(queryset=Genre.objects.all())
+    genre_name = serializers.CharField(source='genre.name', read_only=True)
     auction = AuctionSerializer(read_only=True)
 
     class Meta:
         model = Picture
-        fields = ['id', 'name', 'author', 'genre', 'user', 'image', 'album_images', 'auction']
+        fields = ['id', 'name', 'author', 'genre', 'genre_name', 'user', 'image', 'album_images', 'auction']
         read_only_fields = ['user']
 
 class RateSerializer(serializers.ModelSerializer):

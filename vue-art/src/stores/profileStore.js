@@ -11,11 +11,25 @@ const useProfileStore = defineStore('profileStore',()=>{
     axios.defaults.baseURL = 'http://localhost:8000/'
     axios.defaults.withCredentials = true
 
-    async function fetchMe(){
-        const r = await axios.get("/api/profile/me/")
-        isAuthenticated.value = r.data.is_authenticated
-        username.value = r.data.is_authenticated ? r.data.username : null
-    }
+    // async function fetchMe(){
+    //     const r = await axios.get("/api/profile/me/")
+    //     isAuthenticated.value = r.data.is_authenticated
+    //     username.value = r.data.is_authenticated ? r.data.username : null
+    // }
+
+    async function fetchMe() {
+        try {
+            const r = await axios.get("/api/profile/me/")
+
+            isAuthenticated.value = r.data.is_authenticated
+            username.value = r.data.is_authenticated ? r.data.username : null
+
+        } catch (error) {
+            console.error('Ошибка получения профиля:', error)
+            console.error('Ответ Django:', error.response?.data)
+            console.error('Статус:', error.response?.status)
+        }
+        }
 
     async function login(username, password) {
         console.log(username)

@@ -5,22 +5,22 @@ const props = defineProps({
   item: { type: Object, required: true }})
 const emit = defineEmits(['bid'])
 
-const demo = {
+const data = {
   start_price: 1,
-  current_bid: 1500,
+  current_bid: null,
   final_price: null,
-  start_at: '2026-10-20T07:20',
-  end_at: '2026-12-29T07:20',
+  start_time: '',
+  end_time: '',
 }
-const auction = computed(() => props.item.auction ?? demo)
+const auction = computed(() => props.item.auction)
 
 const now = ref(Date.now())
 let timer = null
 onMounted(() => { timer = setInterval(() => (now.value = Date.now()), 1000) })
 onBeforeUnmount(() => clearInterval(timer))
 
-const startMs = computed(() => new Date(auction.value.start_at).getTime())
-const endMs = computed(() => new Date(auction.value.end_at).getTime())
+const startMs = computed(() => new Date(auction.value.start_time).getTime())
+const endMs = computed(() => new Date(auction.value.end_time).getTime())
 
 const status = computed(() => {
   if (now.value < startMs.value) return 'soon'
@@ -85,11 +85,11 @@ function sendBid() {
     <h6 class="section-title mt-4">Торги</h6>
     <div class="info-row">
       <span class="info-label">Начало</span>
-      <span class="info-value">{{ fmtDate(auction.start_at) }}</span>
+      <span class="info-value">{{ fmtDate(auction.start_time) }}</span>
     </div>
     <div class="info-row">
       <span class="info-label">Окончание</span>
-      <span class="info-value">{{ fmtDate(auction.end_at) }}</span>
+      <span class="info-value">{{ fmtDate(auction.end_time) }}</span>
     </div>
 
     <div class="timer-box" :class="`timer-${status}`">

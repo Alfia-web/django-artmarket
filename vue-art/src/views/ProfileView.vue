@@ -3,7 +3,6 @@
   import axios from "axios"
   import Cookies from 'js-cookie'
   import "bootstrap-icons/font/bootstrap-icons.min.css"
-  import "bootstrap/dist/js/bootstrap.bundle.min.js"
   import "bootstrap/dist/css/bootstrap.min.css"
   import { Modal } from "bootstrap"
   import '../assets/style.scss'
@@ -26,10 +25,6 @@
   const images = ref([])
   const genres = ref([])
 
-  const imagesFiltered = computed(()=>{
-    return images.value
-  })
-
   const imageToAdd  = ref({
     name: '',
     genre: null,
@@ -38,12 +33,24 @@
     start_time: '',
     end_time: '',
   });
+
+  const isFiledsFull = computed(()=>{
+    return(
+      imageToEdit.value.name?.trim() !== '' &&
+      imageToEdit.value.genre !== null &&
+      imageToEdit.value.start_price !== '' &&
+      imageToEdit.value.start_price !== null &&
+      imageToEdit.value.start_time !== '' &&
+      imageToEdit.value.end_time !== '')})
+
   const selectedFiles = ref([])
   const isUploading = ref(false)
   let nextId = 0
 
-  // const imageToShow = ref(null)
-  // const viewerKey = ref(0)
+  const imageToShow = ref(null)
+  const isOpen = ref(false)
+  const pictureModalElement = ref(null)
+
   const imageToEdit = ref({})
 
   const albumCreateModalElement = ref(null)
@@ -67,8 +74,7 @@
       }
       loading.value = true;
       const r = await axios.get('/api/images/my/');
-      images.value = r.data;
-      console.log(r.data)
+      images.value = r.data
       loading.value = false;
   }
 
@@ -112,11 +118,6 @@
       isUploading.value = false
   }
 
-  // function onEditFileChange(event){
-  //   const file = event.target.files[0]
-  //   editPreview.value = file ? URL.createObjectURL(file) : imageToEdit.value.image
-  // }
-
   async function onDeleteImage(image){
     if (editAlbom.value.length <= 1) return
     await axios.delete(`/api/album-images/${image.id}/`)
@@ -125,10 +126,13 @@
 
   async function onImageEditClick(image) {
       const auction = image.auction
-      imageToEdit.value = { id: image.id, name: image.name, genre: image.genre,
+      imageToEdit.value = { 
+        id: image.id, 
+        name: image.name, 
+        genre: image.genre,
         auctionId: auction?.id ?? null, 
         start_price: auction ?  Number(auction.start_price) : 1,
-        start_time:  auction ? toDateTimeLocal(auction.start_time): '',
+        start_time:  auction ? toDateTimeLocal(auction.start_time): '', 
         end_time:  auction ? toDateTimeLocal(auction.end_time) : ''}
   }
 
@@ -145,29 +149,31 @@
       await fetchMyPictures()
   }
 
-  // function onImagePreviewClick(item, index = 0) {
-  //   const photos = item.album_images ?? []
-  //   if (!photos.length) return
-  //   imageToShow.value = { name: item.name, photos, index }
-  //   viewerKey.value++
-  //   Modal.getOrCreateInstance(imageShowModalElement.value).show()
-  // }
-
   async function onUpdateImage() {
     await axios.patch(`/api/images/${imageToEdit.value.id}/`, {
       name: imageToEdit.value.name,
-      genre: imageToEdit.value.genre,
-    })
+      genre: imageToEdit.value.genre,})
 
     const auctionData = {
+      image: imageToEdit.value.id,
       start_price: imageToEdit.value.start_price,
       start_time: imageToEdit.value.start_time,
-      end_time: imageToEdit.value.end_time
-    }
+      end_time: imageToEdit.value.end_time }
 
-      await axios.patch(`/api/auctions/${imageToEdit.value.auctionId}/`,auctionData
-      )
+    if(imageToEdit.value.auctionId){
+      await axios.patch(`/api/auctions/${imageToEdit.value.id}/`, auctionData)
+    }
+    else{
+      const response = await axios.post('/api/auctions/', auctionData)
+      imageToEdit.value.auctionId = response.data.id
+    }
+    
     await fetchMyPictures()
+  }
+
+  function onImagePreviewClick(item){
+    imageToShow.value = {item}
+    Modal.getOrCreateInstance(pictureModalElement.value).show()
   }
 
   async function onRemoveClick(item) {
@@ -239,11 +245,10 @@
       </form>
 
       <div class="img-grid">
-        <div v-for="item in imagesFiltered" :key="item.id" class="image-item">
+        <div v-for="item in images" :key="item.id" class="image-item">
                       <div>
             <div class="img-wrapper">
-              <PictureViewer :item="item" />
-
+              <PictureViewer :item="item" @preview="onImagePreviewClick" />
               <div class="img-actions" @click.stop>
                 <button type="button" class="btn btn-success" @click="onImageEditClick(item)"
                         data-bs-toggle="modal" data-bs-target="#exampleModal">
@@ -261,7 +266,35 @@
           </div>
           </div>
         </div>
-        
+
+        <!-- модальное окно просмотра картины -->
+        <div class="modal fade" id="pictureModal" tabindex="-1" ref="pictureModalElement">
+          <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  {{ imageToShow?.item.name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                 aria-label="Закрыть">
+                </button>
+              </div>
+
+              <div class="modal-body">
+                <div class="row g-4">
+                  <div class="col-lg-7">
+                    <PictureViewer v-if="imageToShow" :item="imageToShow.item"
+                     :preview-enabled="false"/>
+                  </div>
+                  <div class="col-lg-5">
+                    <AuctionInfo v-if="imageToShow" :item="imageToShow.item"/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>        
+
         <!-- бустрап модальное окно - изменение картины -->
         <div class="modal fade" id="exampleModal" tabindex="-1"
           aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -290,8 +323,7 @@
                   <div class="form-floating">
                     <select class="form-select"
                             v-model="imageToEdit.genre" required>
-                      <option v-for="g in genres"
-                              :key="g.id" :value="g.id">
+                      <option v-for="g in genres" :key="g.id" :value="g.id">
                         {{ g.name }}
                       </option>
                     </select>
@@ -311,7 +343,7 @@
                 <div class="col">
                   <label class="form-label">Начало торгов</label>
                   <input type="datetime-local" class="form-control"
-                    v-model="imageToAdd.start_time" required>
+                    v-model="imageToEdit.start_time" required>
                 </div>
 
                 <div class="col">
@@ -354,7 +386,7 @@
 
             <div class="modal-footer">
               <button type="button" class="btn btn-primary"
-                      data-bs-dismiss="modal" @click="onUpdateImage">
+                      data-bs-dismiss="modal" @click="onUpdateImage" :disabled="!isFiledsFull">
                 Сохранить
               </button>
             </div>

@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 class Genre(models.Model):
     name = models.TextField("Жанр", default="Без жанра")
@@ -35,12 +36,6 @@ class Rate(models.Model):
     auction = models.ForeignKey('Auction', on_delete=models.CASCADE, null=True)
 
 class Auction(models.Model):
-    STATUS_CHOICES = [
-        ('active', 'Активный'),
-        ('inactive', 'Неактивный'),
-        ('pending', 'В ожидании'),
-    ]    
-
     start_price = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     start_time = models.DateTimeField(null=True)
     end_time = models.DateTimeField(null=True)
@@ -52,14 +47,16 @@ class Auction(models.Model):
     def clean(self):
         if self.start_time and self.end_time:
             if self.start_time >= self.end_time:
-                raise ValidationError("Время окончания должно быть позже времени начала")
+                raise ValidationError(
+                    "Время окончания должно быть позже времени начала")
 
-        if self.winner and self.status != 'inactive':
-            raise ValidationError("Победитель может быть назначен только после окончания торгов")
+        if self.winner and self.end_time:
+            if timezone.now() < self.end_time:
+                raise ValidationError(
+                    "Победитель может быть назначен только после окончания торгов")
 
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    image = models.OneToOneField(Picture, on_delete=models.CASCADE, null=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    image = models.OneToOneField(Picture, on_delete=models.CASCADE, null=True, related_name='auction')
 
     # считать ставку в реальном времени
     # receive тоько в профайл 
