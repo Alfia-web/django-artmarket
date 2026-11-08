@@ -10,19 +10,21 @@ const data = {
   current_bid: null,
   final_price: null,
   start_time: '',
-  end_time: '',
+  end_time: '', 
 }
-const auction = computed(() => props.item.auction)
-
+const auction = computed(() => props.item?.auction ?? null)
+const hasAuction = computed(() => auction.value !== null)
 const now = ref(Date.now())
+
 let timer = null
 onMounted(() => { timer = setInterval(() => (now.value = Date.now()), 1000) })
 onBeforeUnmount(() => clearInterval(timer))
 
-const startMs = computed(() => new Date(auction.value.start_time).getTime())
-const endMs = computed(() => new Date(auction.value.end_time).getTime())
+const startMs = computed(() =>  hasAuction.value ?  new Date(auction.value.start_time).getTime() : null)
+const endMs = computed(() =>  hasAuction.value ? new Date(auction.value.end_time).getTime() : null)
 
 const status = computed(() => {
+  if (!hasAuction.value) return 'none'
   if (now.value < startMs.value) return 'soon'
   if (now.value < endMs.value) return 'active'
   return 'finished'
@@ -52,10 +54,10 @@ const fmtDate = (iso) =>
   }).replace(',', '')
 const fmtPrice = (v) => `${Number(v).toFixed(2)} ₽`
 
-const currentPrice = computed(() => auction.value.current_bid ?? auction.value.start_price)
+const currentPrice = computed(() => hasAuction.value ?  (auction.value.current_bid ?? auction.value.start_price) : null)
 
 const bid = ref('')
-const canBid = computed(() => Number(bid.value) > currentPrice.value)
+const canBid = computed(() => hasAuction.value && status.value === 'active' && Number(bid.value) > currentPrice.value)
 
 function sendBid() {
   if (!canBid.value) return
@@ -81,40 +83,56 @@ function sendBid() {
       <span class="info-value">{{ item.genre_name ?? 'Не указан' }}</span>
     </div>
 
-    <!-- Торги -->
+        <!-- Торги -->
     <h6 class="section-title mt-4">Торги</h6>
-    <div class="info-row">
-      <span class="info-label">Начало</span>
-      <span class="info-value">{{ fmtDate(auction.start_time) }}</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Окончание</span>
-      <span class="info-value">{{ fmtDate(auction.end_time) }}</span>
-    </div>
+    <template v-if="hasAuction">
+      <div class="info-row">
+        <span class="info-label">Начало</span>
+        <span class="info-value">{{ fmtDate(auction.start_time) }}</span>
+      </div>
 
-    <div class="timer-box" :class="`timer-${status}`">
-      <div class="timer-label">{{ timerLabel }}</div>
-      <div class="timer-value">{{ timerText }}</div>
-    </div>
+      <div class="info-row">
+        <span class="info-label">Окончание</span>
+        <span class="info-value">{{ fmtDate(auction.end_time) }}</span>
+      </div>
 
-    <div class="bid-current">
-      <span class="info-label">
-        {{ status === 'finished' ? 'Продана за' : (auction.current_bid ? 'Текущая ставка' : 'Начальная ставка') }}
-      </span>
-      <span class="bid-price">
-        {{ fmtPrice(status === 'finished' && auction.final_price ? auction.final_price : currentPrice) }}
-      </span>
-    </div>
+      <div class="timer-box" :class="`timer-${status}`">
+        <div class="timer-label">{{ timerLabel }}</div>
+        <div class="timer-value">{{ timerText }}</div>
+      </div>
 
-    <form v-if="status === 'active'" class="bid-row" @submit.prevent="sendBid">
-      <input v-model="bid" type="number" :min="currentPrice + 1" step="1"
-             class="form-control bid-input" :placeholder="`Ваша ставка, больше ${currentPrice} ₽`">
-      <button type="submit" class="bid-btn" :disabled="!canBid" aria-label="Сделать ставку">
-        <i class="bi bi-send-fill"></i>
-      </button>
-    </form>
-    <div v-else-if="status === 'soon'" class="text-secondary small mt-2">
-      Ставки откроются, когда начнутся торги
+      <div class="bid-current">
+        <span class="info-label">
+          {{ status === 'finished' ? 'Продана за' : (auction.current_bid ? 'Текущая ставка' : 'Начальная ставка') }}
+        </span>
+
+        <span class="bid-price">
+          {{ fmtPrice(status === 'finished' && auction.final_price ? auction.final_price : currentPrice) }}
+        </span>
+      </div>
+
+      <form v-if="status === 'active'" class="bid-row" @submit.prevent="sendBid">
+        <input
+          v-model="bid"
+          type="number"
+          :min="currentPrice + 1"
+          step="1"
+          class="form-control bid-input"
+          :placeholder="`Ваша ставка, больше ${currentPrice} ₽`"
+        >
+
+        <button type="submit" class="bid-btn" :disabled="!canBid">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </form>
+
+      <div v-else-if="status === 'soon'" class="text-secondary small mt-2">
+        Ставки откроются, когда начнутся торги
+      </div>
+    </template>
+
+    <div v-else class="text-secondary small mt-2">
+      Для этой картины аукцион ещё не создан.
     </div>
   </div>
 </template>

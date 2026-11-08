@@ -10,10 +10,8 @@
   import { storeToRefs } from 'pinia'
   import PictureViewer from '@/components/PictureViewer.vue'
   import AuctionInfo from '@/components/AuctionInfo.vue'
+  import PictureModal from '@/components/PictureModal.vue'
 
-  defineProps({
-    item: { type: Object, required: true }
-  })
   const emit = defineEmits(['bid'])
   onBeforeMount(() => {
     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
@@ -47,11 +45,13 @@
   const isUploading = ref(false)
   let nextId = 0
 
-  const imageToShow = ref(null)
-  const isOpen = ref(false)
-  const pictureModalElement = ref(null)
-
   const imageToEdit = ref({})
+
+  const pictureModal = ref(null)
+
+  function onImagePreviewClick(item) {
+    pictureModal.value.open(item)
+  }
 
   const albumCreateModalElement = ref(null)
   // const imageShowModalElement = ref(null)
@@ -161,7 +161,7 @@
       end_time: imageToEdit.value.end_time }
 
     if(imageToEdit.value.auctionId){
-      await axios.patch(`/api/auctions/${imageToEdit.value.id}/`, auctionData)
+      await axios.patch(`/api/auctions/${imageToEdit.valuу.auctionId}/`, auctionData)
     }
     else{
       const response = await axios.post('/api/auctions/', auctionData)
@@ -169,11 +169,6 @@
     }
     
     await fetchMyPictures()
-  }
-
-  function onImagePreviewClick(item){
-    imageToShow.value = {item}
-    Modal.getOrCreateInstance(pictureModalElement.value).show()
   }
 
   async function onRemoveClick(item) {
@@ -267,33 +262,7 @@
           </div>
         </div>
 
-        <!-- модальное окно просмотра картины -->
-        <div class="modal fade" id="pictureModal" tabindex="-1" ref="pictureModalElement">
-          <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">
-                  {{ imageToShow?.item.name }}
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                 aria-label="Закрыть">
-                </button>
-              </div>
-
-              <div class="modal-body">
-                <div class="row g-4">
-                  <div class="col-lg-7">
-                    <PictureViewer v-if="imageToShow" :item="imageToShow.item"
-                     :preview-enabled="false"/>
-                  </div>
-                  <div class="col-lg-5">
-                    <AuctionInfo v-if="imageToShow" :item="imageToShow.item"/>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>        
+        <PictureModal ref="pictureModal" />  
 
         <!-- бустрап модальное окно - изменение картины -->
         <div class="modal fade" id="exampleModal" tabindex="-1"
