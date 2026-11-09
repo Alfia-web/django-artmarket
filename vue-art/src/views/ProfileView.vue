@@ -305,8 +305,7 @@
               <div class="row g-2 mb-3">
                 <div class="col">
                   <label class="form-label">Начальная ставка, ₽</label>
-                  <input type="number" class="form-control" v-model.number="imageToEdit.start_price"
-                    min="0.01" step="0.01"required>
+                  <input type="number" class="form-control" v-model.number="imageToEdit.start_price" "required>
                 </div>
 
                 <div class="col">
@@ -439,7 +438,5 @@
       </div>
     </div>
   </template>
-
-
   <style lang="scss" scoped>
   </style>

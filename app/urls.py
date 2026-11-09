@@ -18,18 +18,17 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
-from auction import views
 from rest_framework.routers import DefaultRouter
 from django.urls import include, path
 from debug_toolbar.toolbar import debug_toolbar_urls
 from auction.api import *
 
 router = DefaultRouter()
-router.register('images', views.PictureViewSet, basename='image')       
-router.register('album-images', views.AlbumImageViewSet, basename='album-image') 
-router.register("auctions" ,AuctionViewset, basename="auctions")
+router.register('images', PictureViewSet, basename='image')       
+router.register('album-images', AlbumImageViewSet, basename='album-image') 
+router.register("auctions" , AuctionViewset, basename="auctions")
 router.register("users", UserViewset, basename="users")
-router.register("rates" ,RateViewset, basename="rates")
+router.register("rates" , RateViewset, basename="rates")
 router.register("genres", GenreViewset, basename="genres")
 router.register("profile", ProfileViewset, basename="profile")
 

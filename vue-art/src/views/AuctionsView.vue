@@ -23,7 +23,7 @@ async function fetchImages(reset = true) {
   if (reset) page.value = 1
   loading.value = true
   const r = await axios.get('/api/images/', { params: { page: page.value } })
-  const list = r.data.results ?? r.data
+  const list = r.data.results 
   images.value = reset ? list : [...images.value, ...list]
   hasNext.value = !!r.data.next
   loading.value = false
@@ -36,10 +36,6 @@ function loadMore() {
 
 function onImagePreviewClick(item) {
   pictureModal.value.open(item)
-}
-
-function onBid({ id, amount }) {
-  console.log('ставка', id, amount)
 }
 
 onBeforeMount(fetchImages)
@@ -62,6 +58,6 @@ onBeforeMount(fetchImages)
       </button>
     </div>
 
-    <PictureModal ref="pictureModal" @bid="onBid" />
+    <PictureModal ref="pictureModal" />
   </div>
 </template>

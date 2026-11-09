@@ -18,17 +18,9 @@ const useProfileStore = defineStore('profileStore',()=>{
     // }
 
     async function fetchMe() {
-        try {
             const r = await axios.get("/api/profile/me/")
-
             isAuthenticated.value = r.data.is_authenticated
             username.value = r.data.is_authenticated ? r.data.username : null
-
-        } catch (error) {
-            console.error('Ошибка получения профиля:', error)
-            console.error('Ответ Django:', error.response?.data)
-            console.error('Статус:', error.response?.status)
-        }
         }
 
     async function login(username, password) {
@@ -53,7 +45,6 @@ const useProfileStore = defineStore('profileStore',()=>{
     return{
         isAuthenticated,
         username,
-
         fetchMe, 
         login,
         logout

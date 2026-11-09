@@ -10,7 +10,7 @@ const props = defineProps({
 const emit = defineEmits(['preview'])
 const carouselId = computed(() => `${props.idPrefix}-${props.item.id}`)
 const photos = computed(() => {
-  if (props.item.album_images?.length) {
+  if (props.item.album_images.length) {
     return props.item.album_images.map(p => ({ id: p.id, src: p.imageToAlbum }))
   }
   return props.item.image ? [{ id: 'main', src: props.item.image }] : []
@@ -37,6 +37,5 @@ const photos = computed(() => {
         <span class="carousel-control-next-icon"></span>
       </button>
     </template>
-
   </div>
 </template>

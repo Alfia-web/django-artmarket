@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth import login as django_login
 from django.contrib.auth import authenticate
-
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import mixins, viewsets
 from rest_framework import pagination
 
@@ -16,24 +16,28 @@ class PictureViewSet(mixins.ListModelMixin,
                      viewsets.GenericViewSet,
                      mixins.CreateModelMixin):
     queryset = (Picture.objects
-        .select_related('user', 'genre', 'auction', 'auction__winner').prefetch_related('album_images'))
+        .select_related('user', 'genre', 'auction', 'auction__winner').prefetch_related('album_images').order_by('-id'))
     serializer_class = PictureSerializer
-    pagination_class = pagination.LimitOffsetPagination
+    pagination_class = pagination.PageNumberPagination
 
-    @action(detail=False, url_path="my", methods=['GET'])
+    @action(detail=False, url_path="my", methods=['GET'], permission_classes=[IsAuthenticated])
     def my_picture(self, request):
         user_pictures = self.get_queryset().filter(user=request.user)
         serializer = self.get_serializer(user_pictures, many=True)
-
         return Response(serializer.data)
+
+class AlbumImageViewSet(viewsets.ModelViewSet):
+    queryset = Image.objects.all()
+    serializer_class = AlbumImageSerializer
 
 class AuctionViewset(
     mixins.ListModelMixin,
-    mixins.CreateModelMixin, 
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
     mixins.UpdateModelMixin,
-    GenericViewSet):
-
+    GenericViewSet
+    ):
     queryset = Auction.objects.select_related('winner', 'image')
     serializer_class = AuctionSerializer
 

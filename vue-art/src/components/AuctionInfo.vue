@@ -5,23 +5,32 @@ const props = defineProps({
   item: { type: Object, required: true }})
 const emit = defineEmits(['bid'])
 
-const data = {
-  start_price: 1,
-  current_bid: null,
-  final_price: null,
-  start_time: '',
-  end_time: '', 
-}
 const auction = computed(() => props.item?.auction ?? null)
 const hasAuction = computed(() => auction.value !== null)
 const now = ref(Date.now())
 
 let timer = null
-onMounted(() => { timer = setInterval(() => (now.value = Date.now()), 1000) })
-onBeforeUnmount(() => clearInterval(timer))
+onMounted(() => {
+  timer = setInterval(() => now.value = Date.now(), 1000)
+})
 
-const startMs = computed(() =>  hasAuction.value ?  new Date(auction.value.start_time).getTime() : null)
-const endMs = computed(() =>  hasAuction.value ? new Date(auction.value.end_time).getTime() : null)
+onBeforeUnmount(function() {
+  clearInterval(timer)
+})
+
+const startMs = computed(function() {
+  if (hasAuction.value) {
+    return new Date(auction.value.start_time).getTime()
+  }
+  return null
+})
+
+const endMs = computed(function() {
+  if (hasAuction.value) {
+    return new Date(auction.value.end_time).getTime()
+  }
+  return null
+})
 
 const status = computed(() => {
   if (!hasAuction.value) return 'none'
@@ -115,8 +124,6 @@ function sendBid() {
         <input
           v-model="bid"
           type="number"
-          :min="currentPrice + 1"
-          step="1"
           class="form-control bid-input"
           :placeholder="`Ваша ставка, больше ${currentPrice} ₽`"
         >
