@@ -47,7 +47,7 @@ def checkAucTime(auction):
         raise ValidationError("Торги уже завершены")
 
 def getCurrentPrice(auction):
-    lastRate = Rate.objects.filter(auction=auction).order_by('-price', '-id').first()
+    lastRate = Rate.objects.filter(auction=auction).order_by('-price').first()
 
     if lastRate:
         return lastRate.price

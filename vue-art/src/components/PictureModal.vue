@@ -1,10 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import axios from 'axios'
 import { Modal } from 'bootstrap'
 import PictureViewer from '@/components/PictureViewer.vue'
 import AuctionInfo from '@/components/AuctionInfo.vue'
-
-const emit = defineEmits(['bid'])
 
 const el = ref(null)
 const item = ref(null)
@@ -12,6 +11,13 @@ const item = ref(null)
 function open(picture) {
   item.value = picture
   Modal.getOrCreateInstance(el.value).show()
+}
+
+async function onRate(data) {
+  await axios.post('/api/rates/', {
+    auction_id: data.auctionId,
+    price: data.price,
+  })
 }
 
 defineExpose({ open })
@@ -32,7 +38,7 @@ defineExpose({ open })
               <PictureViewer :item="item" :preview-enabled="false" id-prefix="modal-carousel" />
             </div>
             <div class="col-lg-5">
-              <AuctionInfo :item="item" @bid="emit('bid', $event)" />
+              <AuctionInfo :item="item" @rate="onRate" />
             </div>
           </div>
         </div>

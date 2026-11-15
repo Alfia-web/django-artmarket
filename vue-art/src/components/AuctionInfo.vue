@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue'
+import axios from 'axios'
 
 const props = defineProps({
   item: { type: Object, required: true }})
-const emit = defineEmits(['bid'])
+const emit = defineEmits(['rate'])
 
 const auction = computed(() => props.item?.auction ?? null)
 const hasAuction = computed(() => auction.value !== null)
@@ -14,8 +15,8 @@ onMounted(() => {
   timer = setInterval(() => now.value = Date.now(), 1000)
 })
 
-onBeforeUnmount(function() {
-  clearInterval(timer)
+onUnmounted(() => {
+  clearInterval(timer) 
 })
 
 const startMs = computed(function() {
@@ -63,16 +64,48 @@ const fmtDate = (iso) =>
   }).replace(',', '')
 const fmtPrice = (v) => `${Number(v).toFixed(2)} ₽`
 
-const currentPrice = computed(() => hasAuction.value ?  (auction.value.current_bid ?? auction.value.start_price) : null)
+const currentPrice = ref(null)
+const rates = ref([])
+const rate = ref('')
+const ratesCount = ref(0)
 
-const bid = ref('')
-const canBid = computed(() => hasAuction.value && status.value === 'active' && Number(bid.value) > currentPrice.value)
+const canRate = computed(() => hasAuction.value && status.value === 'active' && 
+  currentPrice.value !== null && Number(rate.value) > currentPrice.value)
 
-function sendBid() {
-  if (!canBid.value) return
-  emit('bid', { id: props.item.id, amount: Number(bid.value) })
-  bid.value = ''
+function sendRate() {
+  if (!canRate.value) return
+  console.log('sendRate вызвана')
+  emit('rate', { auctionId: auction.value.id, price: Number(rate.value) })
+  rate.value = ''
 }
+
+async function fetchRates(auction_id){
+  const response = await axios.get(`/api/rates/auction/${auction_id}/`)
+  currentPrice.value = Number(response.data.current_price)
+  ratesCount.value = response.data.rates_count
+  rates.value = response.data.rates
+}
+
+let updateTimer = null
+watch(() => auction.value?.id, (newId) =>{
+  clearInterval(updateTimer)
+
+  if(!newId){
+    currentPrice.value = null
+    rates.value = []
+    ratesCount.value = 0
+    return
+  }
+
+  fetchRates(newId)
+  updateTimer = setInterval(() => fetchRates(newId), 5000)
+}, { immediate: true })
+
+onUnmounted(() => clearInterval(updateTimer))
+
+const sortedRates = computed(() =>
+  rates.value.toSorted((a, b) => new Date(b.add_at) - new Date(a.add_at)))
+
 </script>
 
 <template>
@@ -92,7 +125,7 @@ function sendBid() {
       <span class="info-value">{{ item.genre_name ?? 'Не указан' }}</span>
     </div>
 
-        <!-- Торги -->
+        <!-- торги -->
     <h6 class="section-title mt-4">Торги</h6>
     <template v-if="hasAuction">
       <div class="info-row">
@@ -110,25 +143,27 @@ function sendBid() {
         <div class="timer-value">{{ timerText }}</div>
       </div>
 
-      <div class="bid-current">
-        <span class="info-label">
-          {{ status === 'finished' ? 'Продана за' : (auction.current_bid ? 'Текущая ставка' : 'Начальная ставка') }}
+      <div class="rate-current">
+        <span>
+          <h6 class="section-title mt-4">
+            {{ status === 'finished' ? 'Продана за' : (auction.rate ? 'Текущая ставка' : 'Начальная ставка') }}
+          </h6>
         </span>
 
-        <span class="bid-price">
+        <span class="rate-price">
           {{ fmtPrice(status === 'finished' && auction.final_price ? auction.final_price : currentPrice) }}
         </span>
       </div>
 
-      <form v-if="status === 'active'" class="bid-row" @submit.prevent="sendBid">
+      <form v-if="status === 'active'" class="rate-row" @submit.prevent="sendRate">
         <input
-          v-model="bid"
+          v-model="rate"
           type="number"
-          class="form-control bid-input"
+          class="form-control rate-input"
           :placeholder="`Ваша ставка, больше ${currentPrice} ₽`"
         >
 
-        <button type="submit" class="bid-btn" :disabled="!canBid">
+        <button type="submit" class="rate-btn" :disabled="!canRate">
           <i class="bi bi-send-fill"></i>
         </button>
       </form>
@@ -141,6 +176,23 @@ function sendBid() {
     <div v-else class="text-secondary small mt-2">
       Для этой картины аукцион ещё не создан.
     </div>
+      <h6 class="section-title mt-4">
+        История ставок
+        <span style="color: red;">{{ ratesCount }}</span>
+      </h6>
+
+      <ul v-if="sortedRates.length" class="rates-list">
+        <li v-for="r in sortedRates" :key="r.id" class="rates-item">
+          <div class="rates-main">
+            <div class="rates-user">{{ r.user }}</div>
+            <div class="rates-date">{{ fmtDate(r.add_at) }}</div>
+          </div>
+
+          <div class="rates-price">{{ fmtPrice(r.price) }}</div>
+        </li>
+      </ul>
+
+      <div v-else class="text-secondary small">Ставок пока нет. Будьте первым!</div>
   </div>
 </template>
 
@@ -170,14 +222,43 @@ function sendBid() {
 .timer-finished { background: #eee; }
 .timer-finished .timer-value { color: #777; }
 
-.bid-current { display: flex; justify-content: space-between; align-items: baseline; }
-.bid-price { font-size: 1.3rem; font-weight: 700; color: #e53935; }
+.rate-current { display: flex; justify-content: space-between; align-items: baseline; }
+.rate-price { font-size: 1.3rem; font-weight: 700; color: #e53935; }
 
-.bid-row { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
-.bid-input { border-radius: 14px; }
-.bid-btn {
+.rate-row { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+.rate-input { border-radius: 14px; }
+.rate-btn {
   flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%;
   background: #e53935; color: #fff;
 }
-.bid-btn:disabled { opacity: .5; }
+.rate-btn:disabled { opacity: .5; }
+.rates-badge {
+  display: inline-block; min-width: 22px; padding: 1px 8px; margin-left: 6px;
+  border-radius: 11px; background: #eee; color: #555;
+  font-size: .8rem; font-weight: 600; text-align: center;
+}
+
+.rates-list {
+  list-style: none; margin: 0; padding: 0;
+  max-height: 260px; overflow-y: auto;
+}
+
+.rates-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; margin-bottom: 8px;
+  border: 1px solid #ddd; border-radius: 14px; background: #fff;
+}
+
+.rates-avatar {
+  flex: none; width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #e0e0e0; color: #555; font-weight: 700;
+}
+
+.rates-main { flex: 1; min-width: 0; }
+.rates-user { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rates-date { font-size: .8rem; color: #888; }
+
+.rates-price { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 </style>

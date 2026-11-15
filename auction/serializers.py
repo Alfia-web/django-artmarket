@@ -43,6 +43,13 @@ class PictureSerializer(serializers.ModelSerializer):
 class RateSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     auction = AuctionSerializer(read_only=True)
+
+    auction_id = serializers.PrimaryKeyRelatedField(
+        queryset = Auction.objects.all(),
+        source = 'auction',
+        write_only = True 
+    )
+
     class Meta:
         model = Rate
-        fields = ['id', 'add_at', 'price', 'user', 'auction']
+        fields = ['id', 'add_at', 'price', 'user', 'auction', 'auction_id']

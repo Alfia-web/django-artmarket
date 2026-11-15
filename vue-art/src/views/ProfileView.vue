@@ -12,7 +12,7 @@
   import AuctionInfo from '@/components/AuctionInfo.vue'
   import PictureModal from '@/components/PictureModal.vue'
 
-  const emit = defineEmits(['bid'])
+  const emit = defineEmits(['rate'])
   onBeforeMount(() => {
     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
   })
@@ -44,10 +44,16 @@
   const selectedFiles = ref([])
   const isUploading = ref(false)
   let nextId = 0
-
   const imageToEdit = ref({})
-
   const pictureModal = ref(null)
+
+  async function onRate(data) {
+    console.log('onRate вызвана:', data)
+    await axios.post('/api/rates/',{
+      auction_id: data.auctionId,
+      price: data.price,
+    })    
+  }
 
   function onImagePreviewClick(item) {
     pictureModal.value.open(item)
@@ -78,8 +84,6 @@
       loading.value = false;
   }
 
-  // следит за изменением определенного значения
-  // immediate - срабоатть сразу, а не ждать первое изменение параметра 
   watch(isAuthenticated, fetchMyPictures, {immediate: true})
 
   async function fetchGenres(){
@@ -262,7 +266,7 @@
           </div>
         </div>
 
-        <PictureModal ref="pictureModal" />  
+        <PictureModal ref="pictureModal" @rate="onRate" />
 
         <!-- бустрап модальное окно - изменение картины -->
         <div class="modal fade" id="exampleModal" tabindex="-1"

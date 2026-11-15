@@ -8,7 +8,6 @@ import requests
 from auction.models import Picture, Image, Genre
 from auction.models import Picture
 
-
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--user', type=str, default=None)
@@ -28,7 +27,7 @@ class Command(BaseCommand):
                 "q": "painting",
                 "limit": 10,
                 "page": random.randint(1, 50),
-                "fields": "id,title,artist_title,image_id,is_public_domain",
+                "fields": "id,title,image_id",
             },
             headers={"User-Agent": "auction_/1.0 (student project)"},
             timeout=15,

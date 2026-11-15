@@ -10,11 +10,9 @@ from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import mixins, viewsets
 from rest_framework import pagination
+from app.services import getCurrentPrice, addRate
 
-class PictureViewSet(mixins.ListModelMixin,
-                     mixins.RetrieveModelMixin,
-                     viewsets.GenericViewSet,
-                     mixins.CreateModelMixin):
+class PictureViewSet(viewsets.ModelViewSet):
     queryset = (Picture.objects
         .select_related('user', 'genre', 'auction', 'auction__winner').prefetch_related('album_images').order_by('-id'))
     serializer_class = PictureSerializer
@@ -66,8 +64,43 @@ class RateViewset(
     mixins.UpdateModelMixin,
     GenericViewSet):
 
+    permission_classes = [IsAuthenticated]
     queryset = Rate.objects.select_related('user', 'auction', 'auction__winner', 'auction__image')
     serializer_class = RateSerializer
+
+    @action(detail=False, url_path="auction/(?P<auction_id>[^/.]+)", methods=['GET'])
+    def get_rates(self, request, auction_id=None):
+        auction = Auction.objects.filter(id=auction_id).first()
+        rates = self.get_queryset().filter(auction_id=auction_id).order_by('-price')
+        rates_data = []
+
+        for rate in rates:
+            rates_data.append({
+                'id': rate.id,
+                'price': str(rate.price),
+                'add_at': rate.add_at,
+                'user': rate.user.username 
+            })    
+
+        return Response({
+            'auction_id': auction_id,
+            'current_price': str(getCurrentPrice(auction)),
+            'rates': rates_data
+        })
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        auction = serializer.validated_data['auction']
+        price = serializer.validated_data['price']
+
+        rate = addRate(
+            auction.id, 
+            request.user, 
+            price)
+        
+        return Response(self.get_serializer(rate).data)
+
 
 class GenreViewset(
     mixins.ListModelMixin,
