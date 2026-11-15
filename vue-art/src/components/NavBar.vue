@@ -5,20 +5,6 @@ import { onBeforeMount, ref } from 'vue';
 import useProfileStore from '@/stores/profileStore';
 import { storeToRefs } from 'pinia';
 
-// const isAuthenticated = ref(false)
-// const userName = ref()
-
-// async function fetchMe(){
-//     const r = await axios.get("/api/profile/me/")
-//     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
-//     isAuthenticated.value = r.data.is_authenticated
-//     userName.value = r.data.is_authenticated ? r.data.userName : null
-// }
-
-// onBeforeMount(()=>{
-//     fetchMe()
-// })
-
 const profileStore = useProfileStore()
 const{
     isAuthenticated,

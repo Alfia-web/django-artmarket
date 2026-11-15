@@ -11,12 +11,31 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import mixins, viewsets
 from rest_framework import pagination
 from app.services import getCurrentPrice, addRate
+from django.utils import timezone
 
 class PictureViewSet(viewsets.ModelViewSet):
     queryset = (Picture.objects
         .select_related('user', 'genre', 'auction', 'auction__winner').prefetch_related('album_images').order_by('-id'))
     serializer_class = PictureSerializer
     pagination_class = pagination.PageNumberPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        now = timezone.now()
+        status = self.request.query_params.get('status')
+
+        if status == 'soon':
+            queryset = queryset.filter(auction__start_time__gt=now)
+        elif status == 'active':
+            queryset = queryset.filter(auction__start_time__lte=now, auction__end_time__gt=now)
+        elif status == 'finished':
+            queryset = queryset.filter(auction__end_time__lte=now)
+
+        genre = self.request.query_params.get('genre')
+        if genre:
+            queryset = queryset.filter(genre_id=genre)
+
+        return queryset
 
     @action(detail=False, url_path="my", methods=['GET'], permission_classes=[IsAuthenticated])
     def my_picture(self, request):
@@ -100,6 +119,7 @@ class RateViewset(
             price)
         
         return Response(self.get_serializer(rate).data)
+
 
 
 class GenreViewset(
