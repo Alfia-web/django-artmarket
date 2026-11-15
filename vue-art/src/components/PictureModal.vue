@@ -4,7 +4,9 @@ import axios from 'axios'
 import { Modal } from 'bootstrap'
 import PictureViewer from '@/components/PictureViewer.vue'
 import AuctionInfo from '@/components/AuctionInfo.vue'
+import useProfileStore from '@/stores/profileStore'
 
+const profileStore = useProfileStore()
 const el = ref(null)
 const item = ref(null)
 
@@ -38,7 +40,7 @@ defineExpose({ open })
               <PictureViewer :item="item" :preview-enabled="false" id-prefix="modal-carousel" />
             </div>
             <div class="col-lg-5">
-              <AuctionInfo :item="item" @rate="onRate" />
+              <AuctionInfo :item="item" :current-user="profileStore.username" @rate="onRate" />
             </div>
           </div>
         </div>

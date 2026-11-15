@@ -3,11 +3,15 @@ import { computed, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'v
 import axios from 'axios'
 
 const props = defineProps({
-  item: { type: Object, required: true }})
+  item: { type: Object, required: true },
+  currentUser: {type: String, default: null}})
 const emit = defineEmits(['rate'])
 
 const auction = computed(() => props.item?.auction ?? null)
 const hasAuction = computed(() => auction.value !== null)
+const isOwner = computed(() => {
+  return props.item.user === props.currentUser
+})
 const now = ref(Date.now())
 
 let timer = null
@@ -67,9 +71,9 @@ const fmtPrice = (v) => `${Number(v).toFixed(2)} ₽`
 const currentPrice = ref(null)
 const rates = ref([])
 const rate = ref('')
-const ratesCount = ref(0)
+const ratesCount = computed(() => rates.value.length)
 
-const canRate = computed(() => hasAuction.value && status.value === 'active' && 
+const canRate = computed(() => hasAuction.value && status.value === 'active' && !isOwner && 
   currentPrice.value !== null && Number(rate.value) > currentPrice.value)
 
 function sendRate() {
@@ -82,7 +86,6 @@ function sendRate() {
 async function fetchRates(auction_id){
   const response = await axios.get(`/api/rates/auction/${auction_id}/`)
   currentPrice.value = Number(response.data.current_price)
-  ratesCount.value = response.data.rates_count
   rates.value = response.data.rates
 }
 
@@ -93,7 +96,6 @@ watch(() => auction.value?.id, (newId) =>{
   if(!newId){
     currentPrice.value = null
     rates.value = []
-    ratesCount.value = 0
     return
   }
 
@@ -146,7 +148,7 @@ const sortedRates = computed(() =>
       <div class="rate-current">
         <span>
           <h6 class="section-title mt-4">
-            {{ status === 'finished' ? 'Продана за' : (auction.rate ? 'Текущая ставка' : 'Начальная ставка') }}
+            {{ status === 'finished' ? 'Продана за' : (ratesCount > 0 ? 'Текущая ставка' : 'Начальная ставка') }}
           </h6>
         </span>
 
@@ -155,7 +157,7 @@ const sortedRates = computed(() =>
         </span>
       </div>
 
-      <form v-if="status === 'active'" class="rate-row" @submit.prevent="sendRate">
+      <form v-if="status === 'active' && !isOwner" class="rate-row" @submit.prevent="sendRate">
         <input
           v-model="rate"
           type="number"
@@ -176,15 +178,17 @@ const sortedRates = computed(() =>
     <div v-else class="text-secondary small mt-2">
       Для этой картины аукцион ещё не создан.
     </div>
+    <h6 class="section-title mt-4">
+        Количество ставок: 
+        <span style="color: red;">{{ ratesCount }}</span>
+      </h6>
       <h6 class="section-title mt-4">
         История ставок
-        <span style="color: red;">{{ ratesCount }}</span>
       </h6>
 
       <ul v-if="sortedRates.length" class="rates-list">
         <li v-for="r in sortedRates" :key="r.id" class="rates-item">
           <div class="rates-main">
-            <div class="rates-user">{{ r.user }}</div>
             <div class="rates-date">{{ fmtDate(r.add_at) }}</div>
           </div>
 

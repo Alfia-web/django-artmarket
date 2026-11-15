@@ -8,7 +8,9 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import '../assets/style.scss'
 import PictureViewer from '@/components/PictureViewer.vue'
 import PictureModal from '@/components/PictureModal.vue'
+import useProfileStore from '@/stores/profileStore'
 
+const profileStore = useProfileStore()
 const images = ref([])
 const loading = ref(false)
 const page = ref(1)
@@ -24,7 +26,7 @@ async function fetchImages(reset = true) {
   loading.value = true
   const r = await axios.get('/api/images/', { params: { page: page.value } })
   const list = r.data.results 
-  images.value = reset ? list : [...images.value, ...list]
+  images.value =  [...images.value, ...list]
   hasNext.value = !!r.data.next
   loading.value = false
 }
@@ -58,6 +60,6 @@ onBeforeMount(fetchImages)
       </button>
     </div>
 
-    <PictureModal ref="pictureModal" />
+    <PictureModal ref="pictureModal" :current-user="profileStore.username" />
   </div>
 </template>
