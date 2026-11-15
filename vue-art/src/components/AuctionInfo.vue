@@ -73,7 +73,7 @@ const rates = ref([])
 const rate = ref('')
 const ratesCount = computed(() => rates.value.length)
 
-const canRate = computed(() => hasAuction.value && status.value === 'active' && !isOwner && 
+const canRate = computed(() => hasAuction.value && status.value === 'active' && !isOwner.value && 
   currentPrice.value !== null && Number(rate.value) > currentPrice.value)
 
 function sendRate() {
