@@ -67,9 +67,15 @@ const hasNext = ref(false)
   const addPhotosInput = ref(null) 
 
   const canUpload = computed(() =>
-    selectedFiles.value.length > 0 && imageToAdd.value.name.trim() !== '' &&
-    imageToAdd.value.genre !== null && !isUploading.value
-  )
+    selectedFiles.value.length > 0 &&
+    imageToAdd.value.name.trim() !== '' &&
+    imageToAdd.value.genre !== null &&
+    imageToAdd.value.start_price > 0 &&
+    imageToAdd.value.start_time !== '' &&
+    imageToAdd.value.end_time !== '' &&
+    new Date(imageToAdd.value.end_time) >
+        new Date(imageToAdd.value.start_time)
+  ) 
 
   const editAlbom = computed(() =>
     images.value.find(i => i.id === imageToEdit.value.id)?.album_images ?? []
@@ -162,6 +168,13 @@ const hasNext = ref(false)
         return axios.post('/api/album-images/', fd)
       }))
       await fetchMyPictures()
+  }
+
+  function toDateTimeLocal(iso) {
+    if (!iso) return ''
+    const d = new Date(iso)
+    const pad = n => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
 
   async function onUpdateImage() {
@@ -320,7 +333,7 @@ const hasNext = ref(false)
               <div class="row g-2 mb-3">
                 <div class="col">
                   <label class="form-label">Начальная ставка, ₽</label>
-                  <input type="number" class="form-control" v-model.number="imageToEdit.start_price" "required>
+                  <input type="number" class="form-control" v-model.number="imageToEdit.start_price "required>
                 </div>
 
                 <div class="col">
@@ -420,7 +433,7 @@ const hasNext = ref(false)
               <div class="row g-2 mb-3">
                 <div class="col">
                   <label class="form-label">Начальная ставка, ₽</label>
-                  <input type="number" class="form-control" v-model.number="imageToEdit.start_price"
+                  <input type="number" class="form-control" v-model.number="imageToAdd.start_price"
                     min="0.01" step="0.01"required>
                 </div>
 
@@ -433,7 +446,7 @@ const hasNext = ref(false)
                 <div class="col">
                   <label class="form-label">Окончание торгов</label>
                   <input type="datetime-local" class="form-control"
-                   v-model="imageToEdit.end_time" required>
+                   v-model="imageToAdd.end_time" required>
                 </div>
               </div>
 

@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework.viewsets import GenericViewSet
 from auction.models import *
 from rest_framework import mixins
@@ -12,12 +13,46 @@ from rest_framework import mixins, viewsets
 from rest_framework import pagination
 from app.services import getCurrentPrice, addRate
 from django.utils import timezone
+from app.services import check_picture_edit_permission
 
 class PictureViewSet(viewsets.ModelViewSet):
     queryset = (Picture.objects
         .select_related('user', 'genre', 'auction', 'auction__winner').prefetch_related('album_images').order_by('-id'))
     serializer_class = PictureSerializer
     pagination_class = pagination.PageNumberPagination
+
+    
+    def create(self, request, *args, **kwargs):
+        files = request.FILES.getlist('photos')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            extra = {}
+            if 'image' not in request.FILES and files:
+                extra['image'] = files[0]
+
+            picture = serializer.save(user=request.user, **extra)
+
+            if files:
+                Image.objects.bulk_create(
+                    [Image(picture=picture, imageToAlbum=f) for f in files]
+                )
+
+            start_price = request.data.get('start_price')
+            start_time = request.data.get('start_time')
+            end_time = request.data.get('end_time')
+
+            if start_price and start_time and end_time:
+                Auction.objects.create(
+                    image=picture,
+                    start_price=start_price,
+                    start_time=start_time,
+                    end_time=end_time,
+                )
+
+        picture = Picture.objects.get(pk=picture.pk)
+        return Response(self.get_serializer(picture).data, status=201)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -38,13 +73,13 @@ class PictureViewSet(viewsets.ModelViewSet):
         return queryset
 
     def update(self, request, *args, **kwargs):
-        picture = self.get_object()
-        self.check_picture_edit_permission(picture)
+        image = self.get_object()
+        check_picture_edit_permission(image, request.user)
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        picture = self.get_object()
-        self.check_picture_edit_permission(picture)
+        image = self.get_object()
+        check_picture_edit_permission(image, request.user)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, url_path="my", methods=['GET'], permission_classes=[IsAuthenticated])

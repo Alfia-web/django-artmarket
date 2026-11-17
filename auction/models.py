@@ -17,7 +17,7 @@ class Picture(models.Model):
     image = models.ImageField("Картина",  upload_to='images/', null=True, blank=True)
     author = models.TextField("Автор", default="Неизвестный")
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    genre = models.ForeignKey(Genre, on_delete=models.CASCADE, null=True)
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE, null=True)   
     class Meta:
         verbose_name = "Картина"
         verbose_name_plural = "Картины"

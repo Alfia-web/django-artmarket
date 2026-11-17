@@ -37,7 +37,6 @@ async function fetchImages(reset = true) {
         status: filters.value.status,
       },
     }) 
-  const list = r.data.results 
   images.value =   reset ? r.data.results : [...images.value, ...r.data.results]
   hasNext.value = !!r.data.next
   loading.value = false
