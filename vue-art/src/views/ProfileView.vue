@@ -22,6 +22,8 @@
   const loading = ref(false)
   const images = ref([])
   const genres = ref([])
+const page = ref(1)
+const hasNext = ref(false)
 
   const imageToAdd  = ref({
     name: '',
@@ -73,16 +75,25 @@
     images.value.find(i => i.id === imageToEdit.value.id)?.album_images ?? []
   )
 
-  async function fetchMyPictures(){
+  async function fetchMyPictures(reset=true){
       if(!isAuthenticated.value) {
         images.value = []
+        page.value = 1
+        hasNext.value = false
         return
       }
+      const nextPage = reset ? 1 : page.value + 1
       loading.value = true;
-      const r = await axios.get('/api/images/my/');
-      images.value = r.data
-      loading.value = false;
+      const r = await axios.get('/api/images/my/', {params: { page: nextPage}});
+      images.value =   reset ? r.data.results : [...images.value, ...r.data.results]
+      page.value = nextPage
+      hasNext.value = !!r.data.next
+      loading.value = false
   }
+
+  function loadMore() {
+    return fetchMyPictures(false)
+}
 
   watch(isAuthenticated, fetchMyPictures, {immediate: true})
 
@@ -440,6 +451,11 @@
           </div>
         </div>
       </div>
+      <div class="text-center my-3" v-if="hasNext">
+      <button class="btn btn-outline-primary" :disabled="loading" @click="loadMore">
+        Показать ещё
+      </button>
+    </div>
     </div>
   </template>
   <style lang="scss" scoped>

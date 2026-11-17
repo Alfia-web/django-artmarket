@@ -37,9 +37,24 @@ class PictureViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def update(self, request, *args, **kwargs):
+        picture = self.get_object()
+        self.check_picture_edit_permission(picture)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        picture = self.get_object()
+        self.check_picture_edit_permission(picture)
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=False, url_path="my", methods=['GET'], permission_classes=[IsAuthenticated])
     def my_picture(self, request):
         user_pictures = self.get_queryset().filter(user=request.user)
+        page = self.paginate_queryset(user_pictures)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+    
         serializer = self.get_serializer(user_pictures, many=True)
         return Response(serializer.data)
 

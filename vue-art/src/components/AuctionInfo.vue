@@ -108,6 +108,10 @@ onUnmounted(() => clearInterval(updateTimer))
 const sortedRates = computed(() =>
   rates.value.toSorted((a, b) => new Date(b.add_at) - new Date(a.add_at)))
 
+
+watch(() => auction.value?.winner, (newWinner) => {
+  console.log('Победитель:', newWinner)
+}, { immediate: true })
 </script>
 
 <template>

@@ -10,6 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied
 
 from auction.models import Auction, Image, Rate
 
@@ -81,4 +82,12 @@ def finishAuc(auction_id):
         auction.save(update_fields=['winner'])
 
     return auction
- 
+
+def check_picture_edit_permission(picture, user):
+    if user.is_is_superuser: return
+
+    if picture.user_is != user:
+        raise PermissionDenied("Нельзя изменять чужую картину")
+
+    if Auction.objects.filter(picture=picture, start_time__lte=timezone.now()).exists():
+        raise PermissionDenied('Нельзя изменять или удалять картину после начала торгов.')
