@@ -11,7 +11,7 @@ from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import mixins, viewsets
 from rest_framework import pagination
-from app.services import getCurrentPrice, addRate, getAuctionWinner
+from app.services import getCurrentPrice, addRate, getAuctionWinner, getRaiting
 from django.utils import timezone
 from app.services import check_picture_edit_permission
 from openpyxl import Workbook
@@ -173,6 +173,11 @@ class AuctionViewset(
             },
             'winning_price': str(rate.price)
         })
+
+    @action(detail=False, url_path="raiting", methods=['GET'])
+    def get_raiting(self, request):
+        raiting = getRaiting()     
+        return Response(raiting)   
 
 class UserViewset(
     mixins.ListModelMixin,

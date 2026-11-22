@@ -270,28 +270,4 @@ const sortedRates = computed(() =>
   border-radius: 11px; background: #eee; color: #555;
   font-size: .8rem; font-weight: 600; text-align: center;
 }
-
-.rates-list {
-  list-style: none; margin: 0; padding: 0;
-  max-height: 260px; overflow-y: auto;
-}
-
-.rates-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 14px; margin-bottom: 8px;
-  border: 1px solid #ddd; border-radius: 14px; background: #fff;
-}
-
-.rates-avatar {
-  flex: none; width: 38px; height: 38px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: #e0e0e0; color: #555; font-weight: 700;
-}
-
-.rates-main { flex: 1; min-width: 0; }
-.rates-user { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rates-date { font-size: .8rem; color: #888; }
-
-.rates-price { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-
 </style>

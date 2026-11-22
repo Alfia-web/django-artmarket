@@ -30,7 +30,10 @@ async function onLogoutButtonClick(params) {
                         <router-link class="nav-link" to="/auctions">Аукционы</router-link>  
                     </li>
                     <li class="nav-item active" v-if="isAuthenticated">
-                    <router-link class="nav-link" to="/">Профиль</router-link>  
+                        <router-link class="nav-link" to="/">Профиль</router-link>  
+                    </li>
+                    <li class="nav-item active">
+                        <router-link class="nav-link" to="/raiting">Рейтинг</router-link>  
                     </li>
                     <li class="nav-item" >
                         <router-link  class="nav-link"   to="/login">Вход</router-link>
