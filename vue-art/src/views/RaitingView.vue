@@ -1,7 +1,7 @@
     
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import axios  from 'axios'
 
 const raiting = ref([])
 
@@ -15,6 +15,23 @@ onMounted(()=>{
 })
 
 const fmtPrice = (v) => `${Number(v)} ₽`
+
+async function exportExele() {
+  const response = await axios.get(`/api/auctions/raiting/export/excel/`, {
+    responseType: 'blob'
+  })
+  const blob = new Blob([response.data])
+  const link = document.createElement('a')
+  const url = window.URL.createObjectURL(blob)
+
+  link.href = url
+  link.download = 'raiting.xlsx'
+
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -22,6 +39,15 @@ const fmtPrice = (v) => `${Number(v)} ₽`
     <h6 class="section-title mt-4">
       Рейтинг покупателей
     </h6>
+
+    <div class="d-flex justify-content-center gap-3 mb-3" >
+      <button class="btn btn-outline-success" @click="exportExele()">
+        Скачать Excel
+      </button>
+      <button class="btn btn-outline-primary">
+        Скачать Word
+      </button>
+    </div>
 
     <table v-if="raiting.length" class="rating-table">
       <thead>

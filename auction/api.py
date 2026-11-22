@@ -1,4 +1,7 @@
+from io import BytesIO
+from tkinter.font import Font
 from django.db import transaction
+from django.http import FileResponse, HttpResponse
 from rest_framework.viewsets import GenericViewSet
 from auction.models import *
 from rest_framework import mixins
@@ -15,6 +18,7 @@ from app.services import getCurrentPrice, addRate, getAuctionWinner, getRaiting
 from django.utils import timezone
 from app.services import check_picture_edit_permission
 from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment
 
 class PictureViewSet(viewsets.ModelViewSet):
     queryset = (Picture.objects
@@ -179,6 +183,41 @@ class AuctionViewset(
         raiting = getRaiting()     
         return Response(raiting)   
 
+    @action(detail=False, url_path="raiting/export/excel", methods=['GET'])
+    def export_exele(self, request):
+        raiting = getRaiting() 
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = 'Рейтинг покупателей'
+
+        sheet.append([
+            'Место',
+            'Пользователь',
+            'Количество выигрышей',
+            'Общая сумма покупок'
+        ])
+
+        for index, user in enumerate(raiting, start=1):
+            sheet.append([
+                index, 
+                user['username'],
+                user['auctions_won'],
+                float(user['total_spent'])
+            ])
+
+        for cell in sheet[1]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+
+        file = BytesIO()
+        workbook.save(file)
+        file.seek(0)
+
+        response = HttpResponse(file.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=raiting.xlsx'
+        return response
+
 class UserViewset(
     mixins.ListModelMixin,
     mixins.CreateModelMixin, 
@@ -256,15 +295,22 @@ class ProfileViewset(GenericViewSet):
 
     @action(detail=False, url_path="me", methods=['GET'])
     def get_me(self, request, *args, **kwargs ):
+        user = request.user
         data = {
             'is_authenticated': self.request.user.is_authenticated
         }
 
-        if self.request.user.is_authenticated:
+        if user.is_authenticated:
+            profile, created = Profile.objects.get_or_create(
+                user=user,
+                defaults={
+                    'role': Profile.Role.undefined
+                }
+            )
             data.update({
-                "username": self.request.user.username,
-                "id": self.request.user.id,
-                "role": self.request.user.profile.role,
+                'username': user.username,
+                'id': user.id,
+                'role': profile.role,
             })
 
         return Response(data)
