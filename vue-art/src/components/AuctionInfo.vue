@@ -66,7 +66,7 @@ const fmtDate = (iso) =>
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   }).replace(',', '')
-const fmtPrice = (v) => `${Number(v).toFixed(2)} ₽`
+const fmtPrice = (v) => `${Number(v)} ₽`
 
 const currentPrice = ref(null)
 const rates = ref([])
@@ -78,14 +78,13 @@ const canRate = computed(() => hasAuction.value && status.value === 'active' && 
 
 function sendRate() {
   if (!canRate.value) return
-  console.log('sendRate вызвана')
   emit('rate', { auctionId: auction.value.id, price: Number(rate.value) })
   rate.value = ''
 }
 
 async function fetchRates(auction_id){
   const response = await axios.get(`/api/rates/auction/${auction_id}/`)
-  currentPrice.value = Number(response.data.current_price)
+  currentPrice.value = response.data.current_price
   rates.value = response.data.rates
 }
 
@@ -100,22 +99,48 @@ watch(() => auction.value?.id, (newId) =>{
   }
 
   fetchRates(newId)
-  updateTimer = setInterval(() => fetchRates(newId), 5000)
+  updateTimer = setInterval(() => {
+    if (status.value === 'finished') {
+      clearInterval(updateTimer) 
+    } else {
+      fetchRates(newId) 
+    }
+  }, 5000)
 }, { immediate: true })
+
+
+const winner = ref(null)
+async function fetchWinner(auctionId) {
+  const response = await axios.get(`/api/auctions/${auctionId}/winner/`)
+  winner.value = response.data.winner
+}
+
+const finishedAuctionId = computed(() => 
+  status.value === 'finished' ? auction.value?.id : null
+)
+
+watch(finishedAuctionId, (id) => {
+  fetchWinner(id)
+}, { immediate: true })
+
 
 onUnmounted(() => clearInterval(updateTimer))
 
-const sortedRates = computed(() =>
-  rates.value.toSorted((a, b) => new Date(b.add_at) - new Date(a.add_at)))
-
-
-watch(() => auction.value?.winner, (newWinner) => {
-  console.log('Победитель:', newWinner)
-}, { immediate: true })
+const sortedRates = computed(() => 
+  rates.value.toSorted((a, b) => b.add_at.localeCompare(a.add_at))
+)
 </script>
 
 <template>
   <div class="auction-panel">
+    
+    <div class="rate-current">
+      <span v-if="status === 'finished'" class="rate-winner">
+        {{ winner ? `Победитель: ${winner.username}` : 'Победителя нет' }}
+      </span>
+    </div>
+
+
     <!-- о картине -->
     <h6 class="section-title">О картине</h6>
     <div class="info-row">
@@ -200,7 +225,7 @@ watch(() => auction.value?.winner, (newWinner) => {
         </li>
       </ul>
 
-      <div v-else class="text-secondary small">Ставок пока нет. Будьте первым!</div>
+      <div v-else class="text-secondary small">Ставок пока нет</div>
   </div>
 </template>
 

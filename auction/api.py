@@ -11,16 +11,16 @@ from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import mixins, viewsets
 from rest_framework import pagination
-from app.services import getCurrentPrice, addRate
+from app.services import getCurrentPrice, addRate, getAuctionWinner
 from django.utils import timezone
 from app.services import check_picture_edit_permission
+from openpyxl import Workbook
 
 class PictureViewSet(viewsets.ModelViewSet):
     queryset = (Picture.objects
         .select_related('user', 'genre', 'auction', 'auction__winner').prefetch_related('album_images').order_by('-id'))
     serializer_class = PictureSerializer
     pagination_class = pagination.PageNumberPagination
-
     
     def create(self, request, *args, **kwargs):
         files = request.FILES.getlist('photos')
@@ -52,7 +52,7 @@ class PictureViewSet(viewsets.ModelViewSet):
                 )
 
         picture = Picture.objects.get(pk=picture.pk)
-        return Response(self.get_serializer(picture).data, status=201)
+        return Response(self.get_serializer(picture).data)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -93,6 +93,39 @@ class PictureViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(user_pictures, many=True)
         return Response(serializer.data)
 
+    @action(detail=False,  url_path='export/excel',methods=['GET'])
+    def export_exel(self, request):
+        pictures = self.get_queryset()
+
+        wb = Workbook
+        ws = wb.active
+        ws.title = 'Слоты. Картины'
+
+        ws.append([
+            'ID', 
+            'Название',
+            'Автор',
+            'Жанр',
+            'Владелец',
+            'Цена',
+            'Начало аукциона',
+            'Окончание аукциона',
+        ])
+
+        for picture in pictures:
+            auction = getattr(picture, 'auction', None)
+
+            ws.append([
+                picture.id, 
+                picture.name, 
+                picture.author,
+                picture.genre.name,
+                picture.user.username,
+                str(auction.start_time),
+                str(auction.end_time),
+                str(auction.start_price)
+            ])
+
 class AlbumImageViewSet(viewsets.ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = AlbumImageSerializer
@@ -107,6 +140,39 @@ class AuctionViewset(
     ):
     queryset = Auction.objects.select_related('winner', 'image')
     serializer_class = AuctionSerializer
+    
+    @action(detail=True, url_path="winner", methods=['GET'])
+    def get_winner(self, request, pk=None):
+        auction = self.get_object()
+
+        if timezone.now() < auction.end_time:
+            return Response(
+                {'error': 'Аукцион ещё не завершён'}
+            )
+
+        rate = getAuctionWinner(auction)
+
+        if rate is None:
+            auction.winner = None
+            auction.save(update_fields=['winner'])
+
+            return Response({
+            'auction_id': auction.id,
+            'winner': None,
+            'message': 'На аукцион не поступило ставок'
+        })
+
+        auction.winner = rate.user
+        auction.save(update_fields=['winner'])
+
+        return Response({
+            'auction_id': auction.id,
+            'winner': {
+                'id': rate.user.id,
+                'username': rate.user.username
+            },
+            'winning_price': str(rate.price)
+        })
 
 class UserViewset(
     mixins.ListModelMixin,
@@ -169,8 +235,6 @@ class RateViewset(
             price)
         
         return Response(self.get_serializer(rate).data)
-
-
 
 class GenreViewset(
     mixins.ListModelMixin,

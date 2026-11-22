@@ -13,7 +13,7 @@ class PictureAdmin(admin.ModelAdmin):
 
 @admin.register(Auction)
 class AuctionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'start_price', 'end_time']
+    list_display = ['id', 'start_price', 'end_time', 'winner']
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):

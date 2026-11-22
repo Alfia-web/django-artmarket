@@ -44,23 +44,9 @@ class Auction(models.Model):
         verbose_name = "Аукцион"
         verbose_name_plural = "Аукционы"
 
-    def clean(self):
-        if self.start_time and self.end_time:
-            if self.start_time >= self.end_time:
-                raise ValidationError(
-                    "Время окончания должно быть позже времени начала")
-
-        if self.winner and self.end_time:
-            if timezone.now() < self.end_time:
-                raise ValidationError(
-                    "Победитель может быть назначен только после окончания торгов")
-
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     image = models.OneToOneField(Picture, on_delete=models.CASCADE, null=True, related_name='auction')
-
-    # считать ставку в реальном времени
-    # receive тоько в профайл 
-
+    
     def __str__(self):
         return str(self.id)
 
