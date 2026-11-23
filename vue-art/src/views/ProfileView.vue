@@ -1,475 +1,494 @@
-  <script setup>
-  import { ref, computed, onBeforeMount, watch } from 'vue'
-  import axios from "axios"
-  import Cookies from 'js-cookie'
-  import "bootstrap-icons/font/bootstrap-icons.min.css"
-  import "bootstrap/dist/css/bootstrap.min.css"
-  import { Modal } from "bootstrap"
-  import '../assets/style.scss'
-  import useProfileStore from '@/stores/profileStore'
-  import { storeToRefs } from 'pinia'
-  import PictureViewer from '@/components/PictureViewer.vue'
-  import AuctionInfo from '@/components/AuctionInfo.vue'
-  import PictureModal from '@/components/PictureModal.vue'
+<script setup>
+import { ref, computed, onBeforeMount,  onMounted, onUnmounted, watch } from 'vue'
+import axios from "axios"
+import Cookies from 'js-cookie'
+import "bootstrap-icons/font/bootstrap-icons.min.css"
+import "bootstrap/dist/css/bootstrap.min.css"
+import { Modal } from "bootstrap"
+import '../assets/style.scss'
+import useProfileStore from '@/stores/profileStore'
+import { storeToRefs } from 'pinia'
+import PictureViewer from '@/components/PictureViewer.vue'
+import AuctionInfo from '@/components/AuctionInfo.vue'
+import PictureModal from '@/components/PictureModal.vue'
 
-  const emit = defineEmits(['rate'])
-  onBeforeMount(() => {
-    axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
-  })
+const emit = defineEmits(['rate'])
+onBeforeMount(() => {
+  axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
+})
 
-  const {isAuthenticated} = storeToRefs(useProfileStore())
+const {isAuthenticated} = storeToRefs(useProfileStore())
 
-  const loading = ref(false)
-  const images = ref([])
-  const genres = ref([])
+const loading = ref(false)
+const images = ref([])
+const genres = ref([])
 const page = ref(1)
 const hasNext = ref(false)
 
-  const imageToAdd  = ref({
-    name: '',
-    genre: null,
-    image: null,
-    start_price: 1,
-    start_time: '',
-    end_time: '',
-  });
+const imageToAdd  = ref({
+  name: '',
+  genre: null,
+  image: null,
+  start_price: 1,
+  start_time: '',
+  end_time: '',
+});
 
-  const isFiledsFull = computed(()=>{
-    return(
-      imageToEdit.value.name?.trim() !== '' &&
-      imageToEdit.value.genre !== null &&
-      imageToEdit.value.start_price !== '' &&
-      imageToEdit.value.start_price !== null &&
-      imageToEdit.value.start_time !== '' &&
-      imageToEdit.value.end_time !== '')})
+const isFiledsFull = computed(()=>{
+  return(
+    imageToEdit.value.name?.trim() !== '' &&
+    imageToEdit.value.genre !== null &&
+    imageToEdit.value.start_price !== '' &&
+    imageToEdit.value.start_price !== null &&
+    imageToEdit.value.start_time !== '' &&
+    imageToEdit.value.end_time !== '')})
 
-  const selectedFiles = ref([])
-  const isUploading = ref(false)
-  let nextId = 0
-  const imageToEdit = ref({})
-  const pictureModal = ref(null)
+const selectedFiles = ref([])
+const isUploading = ref(false)
+let nextId = 0
+const imageToEdit = ref({})
+const pictureModal = ref(null)
 
-  async function onRate(data) {
-    console.log('onRate вызвана:', data)
-    await axios.post('/api/rates/',{
-      auction_id: data.auctionId,
-      price: data.price,
-    })    
-  }
-
-  function onImagePreviewClick(item) {
-    pictureModal.value.open(item)
-  }
-
-  const albumCreateModalElement = ref(null)
-  // const imageShowModalElement = ref(null)
-  const moreInput = ref(null) 
-  const addPhotosInput = ref(null) 
-
-  const canUpload = computed(() =>
-    selectedFiles.value.length > 0 &&
-    imageToAdd.value.name.trim() !== '' &&
-    imageToAdd.value.genre !== null &&
-    imageToAdd.value.start_price > 0 &&
-    imageToAdd.value.start_time !== '' &&
-    imageToAdd.value.end_time !== '' &&
-    new Date(imageToAdd.value.end_time) >
-        new Date(imageToAdd.value.start_time)
-  ) 
-
-  const editAlbom = computed(() =>
-    images.value.find(i => i.id === imageToEdit.value.id)?.album_images ?? []
-  )
-
-  async function fetchMyPictures(reset=true){
-      if(!isAuthenticated.value) {
-        images.value = []
-        page.value = 1
-        hasNext.value = false
-        return
-      }
-      const nextPage = reset ? 1 : page.value + 1
-      loading.value = true;
-      const r = await axios.get('/api/images/my/', {params: { page: nextPage}});
-      images.value =   reset ? r.data.results : [...images.value, ...r.data.results]
-      page.value = nextPage
-      hasNext.value = !!r.data.next
-      loading.value = false
-  }
-
-  function loadMore() {
-    return fetchMyPictures(false)
+async function onRate(data) {
+  console.log('onRate вызвана:', data)
+  await axios.post('/api/rates/',{
+    auction_id: data.auctionId,
+    price: data.price,
+  })    
 }
 
-  watch(isAuthenticated, fetchMyPictures, {immediate: true})
+function onImagePreviewClick(item) {
+  pictureModal.value.open(item)
+}
 
-  async function fetchGenres(){
-    loading.value = true;
-    const r = await axios.get('/api/genres/');
-    console.log(r.data)
-    genres.value = r.data.results;
-    loading.value = false;
-  }
+const albumCreateModalElement = ref(null)
+const moreInput = ref(null) 
+const addPhotosInput = ref(null) 
 
-  onBeforeMount(fetchGenres)
+const canUpload = computed(() =>
+  selectedFiles.value.length > 0 &&
+  imageToAdd.value.name.trim() !== '' &&
+  imageToAdd.value.genre !== null &&
+  imageToAdd.value.start_price > 0 &&
+  imageToAdd.value.start_time !== '' &&
+  imageToAdd.value.end_time !== '' &&
+  new Date(imageToAdd.value.end_time) >
+      new Date(imageToAdd.value.start_time)
+) 
 
-  async function onImageAdd(){
-    if(!canUpload.value) return
-    isUploading.value = true
-      const formData = new FormData()
-      formData.append('name', imageToAdd.value.name)
-      formData.append('genre', imageToAdd.value.genre)
-      formData.append('start_price', imageToAdd.value.start_price)
-      formData.append('start_time', imageToAdd.value.start_time)
-      formData.append('end_time', imageToAdd.value.end_time)
-      selectedFiles.value.forEach(item => formData.append('photos', item.file))
+const editAlbom = computed(() =>
+  images.value.find(i => i.id === imageToEdit.value.id)?.album_images ?? []
+)
 
-      await axios.post('/api/images/', formData)
-      await fetchMyPictures()
-
-      clearSelection()
-      imageToAdd.value = {  name: '',
-          genre: null,
-          image: null,
-          start_price: 1,
-          start_time: '',
-          end_time: ''
-        }
-      closeAlbumModal()
-      isUploading.value = false
-  }
-
-  async function onDeleteImage(image){
-    if (editAlbom.value.length <= 1) return
-    await axios.delete(`/api/album-images/${image.id}/`)
-    await fetchMyPictures()
-  }
-
-  async function onImageEditClick(image) {
-      const auction = image.auction
-      imageToEdit.value = { 
-        id: image.id, 
-        name: image.name, 
-        genre: image.genre,
-        auctionId: auction?.id ?? null, 
-        start_price: auction ?  Number(auction.start_price) : 1,
-        start_time:  auction ? toDateTimeLocal(auction.start_time): '', 
-        end_time:  auction ? toDateTimeLocal(auction.end_time) : ''}
-  }
-
-  async function onAddImageToAlbum(event) {
-    const files  = Array.from(event.target.files)
-    event.target.value = ''
-    if(!files.length)  return
-      await Promise.all(files.map(file=>{
-        const fd = new FormData()
-        fd.append('picture', imageToEdit.value.id)
-        fd.append('imageToAlbum', file)
-        return axios.post('/api/album-images/', fd)
-      }))
-      await fetchMyPictures()
-  }
-
-  function toDateTimeLocal(iso) {
-    if (!iso) return ''
-    const d = new Date(iso)
-    const pad = n => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-  }
-
-  async function onUpdateImage() {
-    await axios.patch(`/api/images/${imageToEdit.value.id}/`, {
-      name: imageToEdit.value.name,
-      genre: imageToEdit.value.genre,})
-
-    const auctionData = {
-      image: imageToEdit.value.id,
-      start_price: imageToEdit.value.start_price,
-      start_time: new Date(imageToEdit.value.start_time).toISOString(),
-      end_time: new Date(imageToEdit.value.end_time).toISOString(), }
-
-    if(imageToEdit.value.auctionId){
-      await axios.patch(`/api/auctions/${imageToEdit.value.auctionId}/`, auctionData)
-    }
-    else{
-      const response = await axios.post('/api/auctions/', auctionData)
-      imageToEdit.value.auctionId = response.data.id
-    }
-    
-    await fetchMyPictures()
-  }
-
-  async function onRemoveClick(item) {
-    if (!confirm(`Удалить «${item.name}» вместе со всеми фото?`)) return
-    await axios.delete(`/api/images/${item.id}/`)
-    await fetchMyPictures()
-  }
-
-  function openAlbumModal(){
-    Modal.getOrCreateInstance(albumCreateModalElement.value).show()
-  }
-
-  function closeAlbumModal(){
-    Modal.getInstance(albumCreateModalElement.value)?.hide()
-  }
-
-  function onFileChange(event) {
-    for (const file of event.target.files) {
-      selectedFiles.value.push({ id: nextId++, file, url: URL.createObjectURL(file) })
-    }
-    event.target.value = ''
-    openAlbumModal()
-  }
-
-  function removePreview(id){
-    const i = selectedFiles.value.findIndex(f=>f.id===id)
-    if(i===-1){
+async function fetchMyPictures(reset=true){
+    if(!isAuthenticated.value) {
+      images.value = []
+      page.value = 1
+      hasNext.value = false
       return
-    } 
-    URL.revokeObjectURL(selectedFiles.value[i].url)
-    selectedFiles.value.splice(i,1)
-    if(!selectedFiles.value.length) {
-      closeAlbumModal()
     }
-  }
+    const nextPage = reset ? 1 : page.value + 1
+    loading.value = true;
+    const r = await axios.get('/api/images/my/', {params: { page: nextPage}});
+    images.value =   reset ? r.data.results : [...images.value, ...r.data.results]
+    page.value = nextPage
+    hasNext.value = !!r.data.next
+    loading.value = false
+}
 
-  function clearSelection() {
-    selectedFiles.value.forEach(f => URL.revokeObjectURL(f.url))
-    selectedFiles.value = []
-  }
+function loadMore() {
+  return fetchMyPictures(false)
+}
 
-  function onCancelAlbum() {
+watch(isAuthenticated, fetchMyPictures, {immediate: true})
+
+async function fetchGenres(){
+  loading.value = true;
+  const r = await axios.get('/api/genres/');
+  console.log(r.data)
+  genres.value = r.data.results;
+  loading.value = false;
+}
+
+onBeforeMount(fetchGenres)
+
+async function onImageAdd(){
+  if(!canUpload.value) return
+  isUploading.value = true
+    const formData = new FormData()
+    formData.append('name', imageToAdd.value.name)
+    formData.append('genre', imageToAdd.value.genre)
+    formData.append('start_price', imageToAdd.value.start_price)
+    formData.append('start_time', imageToAdd.value.start_time)
+    formData.append('end_time', imageToAdd.value.end_time)
+    selectedFiles.value.forEach(item => formData.append('photos', item.file))
+
+    await axios.post('/api/images/', formData)
+    await fetchMyPictures()
+
     clearSelection()
+    imageToAdd.value = {  name: '',
+        genre: null,
+        image: null,
+        start_price: 1,
+        start_time: '',
+        end_time: ''
+      }
+    closeAlbumModal()
+    isUploading.value = false
+}
+
+async function onDeleteImage(image){
+  if (editAlbom.value.length <= 1) return
+  await axios.delete(`/api/album-images/${image.id}/`)
+  await fetchMyPictures()
+}
+
+async function onImageEditClick(image) {
+    const auction = image.auction
+    imageToEdit.value = { 
+      id: image.id, 
+      name: image.name, 
+      genre: image.genre,
+      auctionId: auction?.id ?? null, 
+      auctionStartTime: auction?.start_time ?? null,
+      start_price: auction ?  Number(auction.start_price) : 1,
+      start_time:  auction ? toDateTimeLocal(auction.start_time): '', 
+      end_time:  auction ? toDateTimeLocal(auction.end_time) : ''}
+}
+
+async function onAddImageToAlbum(event) {
+  const files  = Array.from(event.target.files)
+  event.target.value = ''
+  if(!files.length)  return
+    await Promise.all(files.map(file=>{
+      const fd = new FormData()
+      fd.append('picture', imageToEdit.value.id)
+      fd.append('imageToAlbum', file)
+      return axios.post('/api/album-images/', fd)
+    }))
+    await fetchMyPictures()
+}
+
+function toDateTimeLocal(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+async function onUpdateImage() {
+  await axios.patch(`/api/images/${imageToEdit.value.id}/`, {
+    name: imageToEdit.value.name,
+    genre: imageToEdit.value.genre,})
+
+  const auctionData = {
+    image: imageToEdit.value.id,
+    start_price: imageToEdit.value.start_price,
+    start_time: new Date(imageToEdit.value.start_time).toISOString(),
+    end_time: new Date(imageToEdit.value.end_time).toISOString(), }
+
+  if(imageToEdit.value.auctionId){
+    await axios.patch(`/api/auctions/${imageToEdit.value.auctionId}/`, auctionData)
+  }
+  else{
+    const response = await axios.post('/api/auctions/', auctionData)
+    imageToEdit.value.auctionId = response.data.id
+  }
+  
+  await fetchMyPictures()
+}
+
+async function onRemoveClick(item) {
+  if (!confirm(`Удалить «${item.name}» вместе со всеми фото?`)) return
+  await axios.delete(`/api/images/${item.id}/`)
+  await fetchMyPictures()
+}
+
+function openAlbumModal(){
+  Modal.getOrCreateInstance(albumCreateModalElement.value).show()
+}
+
+function closeAlbumModal(){
+  Modal.getInstance(albumCreateModalElement.value)?.hide()
+}
+
+function onFileChange(event) {
+  for (const file of event.target.files) {
+    selectedFiles.value.push({ id: nextId++, file, url: URL.createObjectURL(file) })
+  }
+  event.target.value = ''
+  openAlbumModal()
+}
+
+function removePreview(id){
+  const i = selectedFiles.value.findIndex(f=>f.id===id)
+  if(i===-1){
+    return
+  } 
+  URL.revokeObjectURL(selectedFiles.value[i].url)
+  selectedFiles.value.splice(i,1)
+  if(!selectedFiles.value.length) {
     closeAlbumModal()
   }
-  </script>
+}
 
-  <template>
-    <div class="container mt-4">
-        <!-- ТУТ ПОДКЛЮЧИЛ обработчик отправки формы -->
-      <form @submit.prevent.stop="onImageAdd">
-        <div class="row">
-          <div class="col-auto">
-            <div class="form-floating">
-              <input type="file" class="form-control" 
-              accept="image/*" multiple @change="onFileChange">
-              <label>Добавить новую картинку или альбом </label>
-            </div>
-          </div>
-          <div class="col-auto" v-if="selectedFiles.length">
-            <button type="button" class="btn btn-outline-secondary" @click="openAlbumModal">
-              Фото: {{ selectedFiles.length }}
-            </button>
-          </div>
-          <div class="col-auto">
-            <button class="btn btn-primary">Добавить</button>
-          </div>
-        </div>
-      </form>
+function clearSelection() {
+  selectedFiles.value.forEach(f => URL.revokeObjectURL(f.url))
+  selectedFiles.value = []
+}
 
-      <div class="img-grid">
-        <div v-for="item in images" :key="item.id" class="image-item">
-                      <div>
-            <div class="img-wrapper">
-              <PictureViewer :item="item" @preview="onImagePreviewClick" />
-              <div class="img-actions" @click.stop>
-                <button type="button" class="btn btn-success" @click="onImageEditClick(item)"
-                        data-bs-toggle="modal" data-bs-target="#exampleModal">
-                  <i class="bi bi-pen"></i>
-                </button>
-                <button type="button" class="btn btn-danger" @click.stop="onRemoveClick(item)">
-                  <i class="bi bi-x"></i>
-                </button>
-              </div>
-            </div>
+function onCancelAlbum() {
+  clearSelection()
+  closeAlbumModal()
+}
 
-            <div class="image-name">
-              {{ item.name }}
-            </div>
-          </div>
+const now = ref(Date.now())
+let timeTimer =null
+
+onMounted(()=>{
+  timeTimer = setInterval(()=>{
+    now.value = Date.now()
+  }, 1000)
+})
+
+onUnmounted(()=>{
+  clearInterval(timeTimer)
+})
+
+function canEditPicture(item){
+  const startTime = item.auction?.start_time
+  if(!startTime) return true
+  return now.value < new Date(startTime).getTime()
+}
+</script>
+
+<template>
+  <div class="container mt-4">
+      <!-- ТУТ ПОДКЛЮЧИЛ обработчик отправки формы -->
+    <form @submit.prevent.stop="onImageAdd">
+      <div class="row">
+        <div class="col-auto">
+          <div class="form-floating">
+            <input type="file" class="form-control" 
+            accept="image/*" multiple @change="onFileChange">
+            <label>Добавить новую картинку или альбом </label>
           </div>
         </div>
+        <div class="col-auto" v-if="selectedFiles.length">
+          <button type="button" class="btn btn-outline-secondary" @click="openAlbumModal">
+            Фото: {{ selectedFiles.length }}
+          </button>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-primary">Добавить</button>
+        </div>
+      </div>
+    </form>
 
-        <PictureModal ref="pictureModal" @rate="onRate" />
-
-        <!-- бустрап модальное окно - изменение картины -->
-        <div class="modal fade" id="exampleModal" tabindex="-1"
-          aria-labelledby="exampleModalLabel" aria-hidden="true">
-
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="exampleModalLabel">
-                Редактирование альбома
-              </h5>
-              <button type="button" class="btn-close"
-                      data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-
-            <div class="modal-body">
-              <div class="row g-2 mb-3">
-                <div class="col">
-                  <div class="form-floating">
-                    <input type="text" class="form-control"
-                          v-model="imageToEdit.name" required>
-                    <label>Название</label>
-                  </div>
-                </div>
-
-                <div class="col-auto">
-                  <div class="form-floating">
-                    <select class="form-select"
-                            v-model="imageToEdit.genre" required>
-                      <option v-for="g in genres" :key="g.id" :value="g.id">
-                        {{ g.name }}
-                      </option>
-                    </select>
-                    <label>Жанр</label>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ставка -->
-              <div class="row g-2 mb-3">
-                <div class="col">
-                  <label class="form-label">Начальная ставка, ₽</label>
-                  <input type="number" class="form-control" v-model.number="imageToEdit.start_price "required>
-                </div>
-
-                <div class="col">
-                  <label class="form-label">Начало торгов</label>
-                  <input type="datetime-local" class="form-control"
-                    v-model="imageToEdit.start_time" required>
-                </div>
-
-                <div class="col">
-                  <label class="form-label">Окончание торгов</label>
-                  <input type="datetime-local" class="form-control"
-                   v-model="imageToEdit.end_time" required>
-                </div>
-              </div>
-
-              <div class="row g-2 mb-3">
-                <div v-for="picture in editAlbom"
-                    :key="picture.id" class="col-4">
-
-                  <div class="position-relative">
-                    <img :src="picture.imageToAlbum" alt=""
-                        style="height: 110px; width: 100%; object-fit: cover;"
-                        class="rounded">
-
-                    <button type="button"
-                            class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
-                            :disabled="editAlbom.length <= 1"
-                            :title="editAlbom.length <= 1
-                              ? 'В альбоме должно остаться хотя бы одно фото'
-                              : 'Удалить фото'"
-                            @click="onDeleteImage(picture)">
-                      <i class="bi bi-x"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <input type="file" class="d-none" accept="image/*" multiple
-                    ref="addPhotosInput" @change="onAddImageToAlbum">
-
-              <button type="button" class="btn btn-outline-secondary"
-                      @click="addPhotosInput.click()">
-                Добавить фото
+    <div class="img-grid">
+      <div v-for="item in images" :key="item.id" class="image-item">
+                    <div>
+          <div class="img-wrapper">
+            <PictureViewer :item="item" @preview="onImagePreviewClick" />
+            <div class="img-actions" @click.stop v-if="canEditPicture(item)">
+              <button type="button" class="btn btn-success" @click="onImageEditClick(item)"
+                      data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <i class="bi bi-pen"></i>
               </button>
-            </div>
-
-            <div class="modal-footer">
-              <button type="button" class="btn btn-primary"
-                      data-bs-dismiss="modal" @click="onUpdateImage" :disabled="!isFiledsFull">
-                Сохранить
+              <button type="button" class="btn btn-danger" @click.stop="onRemoveClick(item)" >
+                <i class="bi bi-x"></i>
               </button>
             </div>
           </div>
+
+          <div class="image-name">
+            {{ item.name }}
+          </div>
         </div>
-      </div>   
+        </div>
+      </div>
 
-      <!-- бустрап модальное окно - новый альбом -->
-      <div class="modal fade" id="albumModal" ref="albumCreateModalElement" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Новый альбом ({{ selectedFiles.length }})</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
+      <PictureModal ref="pictureModal" @rate="onRate" />
 
-            <div class="modal-body">
-              <div class="row g-2 mb-3">
-                <div class="col">
-                  <input type="text" class="form-control" placeholder="Название" v-model="imageToAdd.name">
+      <!-- бустрап модальное окно - изменение картины -->
+      <div class="modal fade" id="exampleModal" tabindex="-1"
+        aria-labelledby="exampleModalLabel" aria-hidden="true">
+
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">
+              Редактирование альбома
+            </h5>
+            <button type="button" class="btn-close"
+                    data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <div class="form-floating">
+                  <input type="text" class="form-control"
+                        v-model="imageToEdit.name" required>
+                  <label>Название</label>
                 </div>
-                <div class="col-auto">
-                  <select class="form-select" v-model="imageToAdd.genre">
-                    <option :value="null" disabled>Жанр</option>
-                    <option v-for="g in genres" :key="g.id" :value="g.id">{{ g.name }}</option>
+              </div>
+
+              <div class="col-auto">
+                <div class="form-floating">
+                  <select class="form-select"
+                          v-model="imageToEdit.genre" required>
+                    <option v-for="g in genres" :key="g.id" :value="g.id">
+                      {{ g.name }}
+                    </option>
                   </select>
-                </div>
-              </div>
-
-              <div class="row g-3">
-                <div v-for="p in selectedFiles" :key="p.id" class="col-4">
-                  <div class="card position-relative">
-                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
-                            style="z-index: 1" @click="removePreview(p.id)">
-                      <i class="bi bi-x"></i>
-                    </button>
-                    <img :src="p.url" class="card-img-top"
-                        style="height: 180px; object-fit: contain;" alt="Предпросмотр">
-                    <div class="card-body p-2">
-                      <p class="card-text small text-truncate mb-0">{{ p.file.name }}</p>
-                    </div>
-                  </div>
+                  <label>Жанр</label>
                 </div>
               </div>
             </div>
 
             <!-- ставка -->
-              <div class="row g-2 mb-3">
-                <div class="col">
-                  <label class="form-label">Начальная ставка, ₽</label>
-                  <input type="number" class="form-control" v-model.number="imageToAdd.start_price"
-                    min="0.01" step="0.01"required>
-                </div>
-
-                <div class="col">
-                  <label class="form-label">Начало торгов</label>
-                  <input type="datetime-local" class="form-control"
-                    v-model="imageToAdd.start_time" required>
-                </div>
-
-                <div class="col">
-                  <label class="form-label">Окончание торгов</label>
-                  <input type="datetime-local" class="form-control"
-                   v-model="imageToAdd.end_time" required>
-                </div>
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <label class="form-label">Начальная ставка, ₽</label>
+                <input type="number" class="form-control" v-model.number="imageToEdit.start_price "required>
               </div>
 
-            <div class="modal-footer">
-              <input type="file" class="d-none" accept="image/*" multiple
-                    ref="moreInput" @change="onFileChange">
-              <button type="button" class="btn btn-outline-secondary me-auto" @click="moreInput.click()">
-                Добавить ещё
-              </button>
-              <button type="button" class="btn btn-secondary" @click="onCancelAlbum">Отмена</button>
-              <button type="button" class="btn btn-primary" :disabled="!canUpload" @click="onImageAdd">
-                Загрузить
-              </button>
+              <div class="col">
+                <label class="form-label">Начало торгов</label>
+                <input type="datetime-local" class="form-control"
+                  v-model="imageToEdit.start_time" required>
+              </div>
+
+              <div class="col">
+                <label class="form-label">Окончание торгов</label>
+                <input type="datetime-local" class="form-control"
+                  v-model="imageToEdit.end_time" required>
+              </div>
             </div>
+
+            <div class="row g-2 mb-3">
+              <div v-for="picture in editAlbom"
+                  :key="picture.id" class="col-4">
+
+                <div class="position-relative">
+                  <img :src="picture.imageToAlbum" alt=""
+                      style="height: 110px; width: 100%; object-fit: cover;"
+                      class="rounded">
+
+                  <button type="button"
+                          class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                          :disabled="editAlbom.length <= 1"
+                          :title="editAlbom.length <= 1
+                            ? 'В альбоме должно остаться хотя бы одно фото'
+                            : 'Удалить фото'"
+                          @click="onDeleteImage(picture)">
+                    <i class="bi bi-x"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <input type="file" class="d-none" accept="image/*" multiple
+                  ref="addPhotosInput" @change="onAddImageToAlbum">
+
+            <button type="button" class="btn btn-outline-secondary"
+                    @click="addPhotosInput.click()">
+              Добавить фото
+            </button>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary"
+                    data-bs-dismiss="modal" @click="onUpdateImage" :disabled="!isFiledsFull">
+              Сохранить
+            </button>
           </div>
         </div>
       </div>
-      <div class="text-center my-3" v-if="hasNext">
-      <button class="btn btn-outline-primary" :disabled="loading" @click="loadMore">
-        Показать ещё
-      </button>
+    </div>   
+
+    <!-- бустрап модальное окно - новый альбом -->
+    <div class="modal fade" id="albumModal" ref="albumCreateModalElement" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Новый альбом ({{ selectedFiles.length }})</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <input type="text" class="form-control" placeholder="Название" v-model="imageToAdd.name">
+              </div>
+              <div class="col-auto">
+                <select class="form-select" v-model="imageToAdd.genre">
+                  <option :value="null" disabled>Жанр</option>
+                  <option v-for="g in genres" :key="g.id" :value="g.id">{{ g.name }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div v-for="p in selectedFiles" :key="p.id" class="col-4">
+                <div class="card position-relative">
+                  <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                          style="z-index: 1" @click="removePreview(p.id)">
+                    <i class="bi bi-x"></i>
+                  </button>
+                  <img :src="p.url" class="card-img-top"
+                      style="height: 180px; object-fit: contain;" alt="Предпросмотр">
+                  <div class="card-body p-2">
+                    <p class="card-text small text-truncate mb-0">{{ p.file.name }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ставка -->
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <label class="form-label">Начальная ставка, ₽</label>
+                <input type="number" class="form-control" v-model.number="imageToAdd.start_price"
+                  min="0.01" step="0.01"required>
+              </div>
+
+              <div class="col">
+                <label class="form-label">Начало торгов</label>
+                <input type="datetime-local" class="form-control"
+                  v-model="imageToAdd.start_time" required>
+              </div>
+
+              <div class="col">
+                <label class="form-label">Окончание торгов</label>
+                <input type="datetime-local" class="form-control"
+                  v-model="imageToAdd.end_time" required>
+              </div>
+            </div>
+
+          <div class="modal-footer">
+            <input type="file" class="d-none" accept="image/*" multiple
+                  ref="moreInput" @change="onFileChange">
+            <button type="button" class="btn btn-outline-secondary me-auto" @click="moreInput.click()">
+              Добавить ещё
+            </button>
+            <button type="button" class="btn btn-secondary" @click="onCancelAlbum">Отмена</button>
+            <button type="button" class="btn btn-primary" :disabled="!canUpload" @click="onImageAdd">
+              Загрузить
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-    </div>
-  </template>
-  <style lang="scss" scoped>
-  </style>
+    <div class="text-center my-3" v-if="hasNext">
+    <button class="btn btn-outline-primary" :disabled="loading" @click="loadMore">
+      Показать ещё
+    </button>
+  </div>
+  </div>
+</template>
+<style lang="scss" scoped>
+</style>
