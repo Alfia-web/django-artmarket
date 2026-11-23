@@ -108,7 +108,6 @@ watch(() => auction.value?.id, (newId) =>{
   }, 5000)
 }, { immediate: true })
 
-
 const winner = ref(null)
 async function fetchWinner(auctionId) {
   const response = await axios.get(`/api/auctions/${auctionId}/winner/`)
@@ -123,12 +122,13 @@ watch(finishedAuctionId, (id) => {
   fetchWinner(id)
 }, { immediate: true })
 
-
 onUnmounted(() => clearInterval(updateTimer))
 
 const sortedRates = computed(() => 
   rates.value.toSorted((a, b) => b.add_at.localeCompare(a.add_at))
 )
+
+defineExpose({ fetchRates })
 </script>
 
 <template>
@@ -269,5 +269,13 @@ const sortedRates = computed(() =>
   display: inline-block; min-width: 22px; padding: 1px 8px; margin-left: 6px;
   border-radius: 11px; background: #eee; color: #555;
   font-size: .8rem; font-weight: 600; text-align: center;
+}
+.rate-winner {
+  display: block;
+  width: 100%;
+  text-align: center;
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 18px;
 }
 </style>
