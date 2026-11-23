@@ -82,15 +82,30 @@ function sendRate() {
   rate.value = ''
 }
 
+let ratesController = null
 async function fetchRates(auction_id){
-  const response = await axios.get(`/api/rates/auction/${auction_id}/`)
-  currentPrice.value = response.data.current_price
-  rates.value = response.data.rates
+  if (ratesController){ ratesController.abort()}
+
+  const controller = new AbortController()
+  ratesController = controller
+
+  const response = await axios.get(`/api/rates/auction/${auction_id}/`,{
+    signal: controller.signal
+  })
+
+  if(!controller.signal.aborted){
+    currentPrice.value = response.data.current_price
+    rates.value = response.data.rates
+  }
 }
 
 let updateTimer = null
 watch(() => auction.value?.id, (newId) =>{
   clearInterval(updateTimer)
+
+  if(ratesController){
+    ratesController.abort()
+  }
 
   if(!newId){
     currentPrice.value = null
@@ -102,6 +117,10 @@ watch(() => auction.value?.id, (newId) =>{
   updateTimer = setInterval(() => {
     if (status.value === 'finished') {
       clearInterval(updateTimer) 
+
+      if(ratesController){
+        ratesController.abort()
+      }
     } else {
       fetchRates(newId) 
     }
@@ -122,7 +141,13 @@ watch(finishedAuctionId, (id) => {
   fetchWinner(id)
 }, { immediate: true })
 
-onUnmounted(() => clearInterval(updateTimer))
+onUnmounted(() => {
+  clearInterval(updateTimer)
+
+  if(ratesController){
+    ratesController.abort()
+  }
+})
 
 const sortedRates = computed(() => 
   rates.value.toSorted((a, b) => b.add_at.localeCompare(a.add_at))
