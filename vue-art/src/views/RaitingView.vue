@@ -32,6 +32,23 @@ async function exportExele() {
   link.remove()
   window.URL.revokeObjectURL(url)
 }
+
+async function exportWord() {
+  const response = await axios.get(`/api/auctions/raiting/export/word/`, {
+    responseType: 'blob'
+  })
+  const blob = new Blob([response.data])
+  const link = document.createElement('a')
+  const url = window.URL.createObjectURL(blob)
+
+  link.href = url
+  link.download = 'raiting.docx'
+
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -44,7 +61,7 @@ async function exportExele() {
       <button class="btn btn-outline-success" @click="exportExele()">
         Скачать Excel
       </button>
-      <button class="btn btn-outline-primary">
+      <button class="btn btn-outline-primary" @click="exportWord()">
         Скачать Word
       </button>
     </div>

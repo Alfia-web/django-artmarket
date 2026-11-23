@@ -1,5 +1,6 @@
 from io import BytesIO
 from tkinter.font import Font
+from docx import Document
 from django.db import transaction
 from django.http import FileResponse, HttpResponse
 from rest_framework.viewsets import GenericViewSet
@@ -216,6 +217,39 @@ class AuctionViewset(
 
         response = HttpResponse(file.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = 'attachment; filename=raiting.xlsx'
+        return response
+
+    @action(detail=False, url_path="raiting/export/word", methods=['GET'])
+    def export_word(self, request):
+        raiting = getRaiting() 
+
+        document = Document()
+        document.add_heading('Рейтинг покупателей', level=1)
+        table = document.add_table(rows=1, cols = 4)
+
+        headers = ([
+            'Место',
+            'Пользователь',
+            'Количество выигрышей',
+            'Общая сумма покупок'
+        ])
+
+        for index, header in enumerate(headers):
+            table.rows[0].cells[index].text = header
+
+        for index, user in enumerate(raiting, start=1):
+            cells = table.add_row().cells
+            cells[0].text = str(index)
+            cells[1].text = user['username']
+            cells[2].text = str(user['auctions_won'])
+            cells[3].text = str(user['total_spent'])
+
+        file = BytesIO()
+        document.save(file)
+        file.seek(0)
+
+        response = HttpResponse(file.getvalue(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename=raiting.docx'
         return response
 
 class UserViewset(
