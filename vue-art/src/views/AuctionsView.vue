@@ -3,7 +3,6 @@ import { ref, onBeforeMount, computed} from 'vue'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import 'bootstrap-icons/font/bootstrap-icons.min.css'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '../assets/style.scss'
 import PictureViewer from '@/components/PictureViewer.vue'
@@ -46,7 +45,6 @@ async function fetchImages(reset = true) {
 }
 
 function loadMore() {
-  page.value++
   return fetchImages(false)
 }
 
@@ -67,19 +65,6 @@ async function onRemoveClick(item) {
   if (!confirm(`Удалить «${item.name}» вместе со всеми фото?`)) return
   await axios.delete(`/api/images/${item.id}/`)
   await fetchImages()
-}
-
-async function onImageEditClick(image) {
-    const auction = image.auction
-    imageToEdit.value = { 
-      id: image.id, 
-      name: image.name, 
-      genre: image.genre,
-      auctionId: auction?.id ?? null, 
-      auctionStartTime: auction?.start_time ?? null,
-      start_price: auction ?  Number(auction.start_price) : 1,
-      start_time:  auction ? toDateTimeLocal(auction.start_time): '', 
-      end_time:  auction ? toDateTimeLocal(auction.end_time) : ''}
 }
 
 onBeforeMount(() => {
@@ -122,8 +107,7 @@ onBeforeMount(() => {
         <div class="img-wrapper">
           <PictureViewer :item="item" @preview="onImagePreviewClick" />
              <div v-if="isSuperuser" class="img-actions" @click.stop">
-              <button type="button" class="btn btn-success" @click="editModal.open(item)""
-                      data-bs-toggle="modal" data-bs-target="#exampleModal">
+              <button type="button" class="btn btn-success" @click="editModal.open(item)"">
                 <i class="bi bi-pen"></i>
               </button>
               <button type="button" class="btn btn-danger" @click.stop="onRemoveClick(item)" >
@@ -146,6 +130,6 @@ onBeforeMount(() => {
     </div>
 
     <PictureModal ref="pictureModal" :current-user="profileStore.username" />
-    <PictureEditModal ref="editModal" :genres="genres" @update="fetchMyPictures"/>
+    <PictureEditModal ref="editModal" :genres="genres" @update="fetchImages"/>
   </div>
 </template>
