@@ -7,11 +7,9 @@ from django.utils import timezone
 
 class Genre(models.Model):
     name = models.TextField("Жанр", default="Без жанра")
-
     def __str__(self):
         return self.name
     
-# Create your models here.
 class Picture(models.Model):
     name = models.TextField("Название")   
     image = models.ImageField("Картина",  upload_to='images/', null=True, blank=True)
@@ -26,7 +24,7 @@ class Picture(models.Model):
         return self.name
 
 class Image(models.Model):
-    imageToAlbum = models.ImageField("Картина",  upload_to='images/', null=True, blank=True)
+    imageToAlbum = models.ImageField("Картина",  upload_to='images/')
     picture = models.ForeignKey(Picture, on_delete=models.CASCADE, null=True, related_name='album_images')
  
 class Rate(models.Model):

@@ -64,14 +64,12 @@ def getRaiting():
     now = timezone.now()
 
     for auction in Auction.objects.all():
-        if auction.end_time > now or auction.end_time is None:
-            continue
+        if auction.end_time > now or auction.end_time is None: continue
 
         rate = getAuctionWinner(auction)
+        user_id = rate.user.id
 
         if rate is None: continue
-
-        user_id = rate.user.id
 
         if user_id not in raiting:
             raiting[user_id] = {

@@ -216,8 +216,7 @@ function canEditPicture(item){
           <div class="img-wrapper">
             <PictureViewer :item="item" @preview="onImagePreviewClick" />
             <div class="img-actions" @click.stop v-if="canEditPicture(item)">
-              <button type="button" class="btn btn-success" @click="editModal.open(item)""
-                      data-bs-toggle="modal" data-bs-target="#exampleModal">
+              <button type="button" class="btn btn-success" @click="editModal.open(item)"">
                 <i class="bi bi-pen"></i>
               </button>
               <button type="button" class="btn btn-danger" @click.stop="onRemoveClick(item)" >

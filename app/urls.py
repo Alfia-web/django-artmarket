@@ -35,7 +35,4 @@ router.register("profile", ProfileViewset, basename="profile")
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
-] + debug_toolbar_urls()
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + debug_toolbar_urls() + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

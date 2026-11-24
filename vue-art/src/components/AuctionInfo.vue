@@ -128,7 +128,9 @@ watch(() => auction.value?.id, (newId) =>{
 }, { immediate: true })
 
 const winner = ref(null)
+
 async function fetchWinner(auctionId) {
+  if(!auctionId) return
   const response = await axios.get(`/api/auctions/${auctionId}/winner/`)
   winner.value = response.data.winner
 }

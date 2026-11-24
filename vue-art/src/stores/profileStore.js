@@ -8,8 +8,7 @@ const useProfileStore = defineStore('profileStore',()=>{
     const username = ref()
     const isSuperuser = ref(false)
 
-    axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
-    axios.defaults.withCredentials = true
+    axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken")
 
     async function fetchMe() {
             const r = await axios.get("/api/profile/me/")
@@ -21,7 +20,7 @@ const useProfileStore = defineStore('profileStore',()=>{
     async function login(username, password) {
         console.log(username)
         console.log(password)
-        const r = await axios.post('/api/profile/login/',{
+        await axios.post('/api/profile/login/',{
             username: username,
             password: password,
         })

@@ -152,7 +152,7 @@ class AuctionViewset(
 
         if timezone.now() < auction.end_time:
             return Response(
-                {'error': 'Аукцион ещё не завершён'}
+                {'error': 'Аукцион ещё не завершён'},
             )
 
         rate = getAuctionWinner(auction)

@@ -40,6 +40,8 @@ async function onImageEditClick(image) {
 }
 
 async function refreshPicture() {
+  const response = await axios.get(`/api/images/${currentItem.value.id}/`)
+  currentItem.value = response.data
   emit('update')
 }
 
@@ -96,6 +98,12 @@ function open(item){
     Modal.getOrCreateInstance(modalElement.value).show()
 }
 
+const minDateTime = computed(() => {
+  const now = new Date()
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+  return now.toISOString().slice(0, 16)
+})
+
 defineExpose({ open })
 </script>
 
@@ -147,13 +155,13 @@ defineExpose({ open })
               <div class="col">
                 <label class="form-label">Начало торгов</label>
                 <input type="datetime-local" class="form-control"
-                  v-model="imageToEdit.start_time" required>
+                  v-model="imageToEdit.start_time" :min="minDateTime" required>
               </div>
 
               <div class="col">
                 <label class="form-label">Окончание торгов</label>
                 <input type="datetime-local" class="form-control"
-                  v-model="imageToEdit.end_time" required>
+                  v-model="imageToEdit.end_time" :min="minDateTime" required>
               </div>
             </div>
 
