@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onBeforeMount } from 'vue'
+import { ref, onBeforeMount, computed} from 'vue'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import 'bootstrap-icons/font/bootstrap-icons.min.css'
@@ -9,8 +9,11 @@ import '../assets/style.scss'
 import PictureViewer from '@/components/PictureViewer.vue'
 import PictureModal from '@/components/PictureModal.vue'
 import useProfileStore from '@/stores/profileStore'
+import PictureEditModal from '@/components/PictureEditModal.vue'
 
+const editModal = ref(null)
 const profileStore = useProfileStore()
+const isSuperuser = computed(() => profileStore.isSuperuser)
 const images = ref([])
 const loading = ref(false)
 const page = ref(1)
@@ -60,6 +63,25 @@ function resetFilters() {
   return fetchImages(true)
 }
 
+async function onRemoveClick(item) {
+  if (!confirm(`Удалить «${item.name}» вместе со всеми фото?`)) return
+  await axios.delete(`/api/images/${item.id}/`)
+  await fetchImages()
+}
+
+async function onImageEditClick(image) {
+    const auction = image.auction
+    imageToEdit.value = { 
+      id: image.id, 
+      name: image.name, 
+      genre: image.genre,
+      auctionId: auction?.id ?? null, 
+      auctionStartTime: auction?.start_time ?? null,
+      start_price: auction ?  Number(auction.start_price) : 1,
+      start_time:  auction ? toDateTimeLocal(auction.start_time): '', 
+      end_time:  auction ? toDateTimeLocal(auction.end_time) : ''}
+}
+
 onBeforeMount(() => {
   fetchGenres()
   fetchImages()
@@ -99,6 +121,15 @@ onBeforeMount(() => {
       <div v-for="item in images" :key="item.id" class="image-item">
         <div class="img-wrapper">
           <PictureViewer :item="item" @preview="onImagePreviewClick" />
+             <div v-if="isSuperuser" class="img-actions" @click.stop">
+              <button type="button" class="btn btn-success" @click="editModal.open(item)""
+                      data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <i class="bi bi-pen"></i>
+              </button>
+              <button type="button" class="btn btn-danger" @click.stop="onRemoveClick(item)" >
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
         </div>
         <div class="image-name">{{ item.name }}</div>
       </div>
@@ -115,5 +146,6 @@ onBeforeMount(() => {
     </div>
 
     <PictureModal ref="pictureModal" :current-user="profileStore.username" />
+    <PictureEditModal ref="editModal" :genres="genres" @update="fetchMyPictures"/>
   </div>
 </template>

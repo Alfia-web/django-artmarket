@@ -1,14 +1,7 @@
-# времят торгов
-# размер ставки
-# создание ставки
-# определение победителя
-# завершение аука
-
 from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.exceptions import PermissionDenied
 

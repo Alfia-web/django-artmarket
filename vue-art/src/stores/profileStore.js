@@ -6,15 +6,16 @@ import Cookies from 'js-cookie'
 const useProfileStore = defineStore('profileStore',()=>{
     const isAuthenticated = ref(false)
     const username = ref()
+    const isSuperuser = ref(false)
 
     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get("csrftoken");
-    axios.defaults.baseURL = 'http://localhost:8000/'
     axios.defaults.withCredentials = true
 
     async function fetchMe() {
             const r = await axios.get("/api/profile/me/")
             isAuthenticated.value = r.data.is_authenticated
             username.value = r.data.is_authenticated ? r.data.username : null
+            isSuperuser.value = r.data.is_authenticated ? r.data.is_superuser : false
         }
 
     async function login(username, password) {
@@ -33,7 +34,7 @@ const useProfileStore = defineStore('profileStore',()=>{
     }
 
     onBeforeMount(()=>{
-    fetchMe()
+        fetchMe()
     })
 
     return{
@@ -41,7 +42,8 @@ const useProfileStore = defineStore('profileStore',()=>{
         username,
         fetchMe, 
         login,
-        logout
+        logout,
+        isSuperuser
     }
 })
 

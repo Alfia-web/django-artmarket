@@ -9,7 +9,7 @@ from auction.models import Profile
 # Register your models here.
 @admin.register(Picture)
 class PictureAdmin(admin.ModelAdmin):
-    list_display = ['name', 'image'] 
+    list_display = ['id', 'name', 'image'] 
 
 @admin.register(Auction)
 class AuctionAdmin(admin.ModelAdmin):

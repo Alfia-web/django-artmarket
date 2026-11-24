@@ -328,10 +328,12 @@ class ProfileViewset(GenericViewSet):
     queryset = User.objects.all().order_by('id')
 
     @action(detail=False, url_path="me", methods=['GET'])
-    def get_me(self, request, *args, **kwargs ):
+    def get_me(self, request, *args, **kwargs):
         user = request.user
+
         data = {
-            'is_authenticated': self.request.user.is_authenticated
+            'is_authenticated': user.is_authenticated,
+            'is_superuser': user.is_authenticated and user.is_superuser
         }
 
         if user.is_authenticated:
@@ -341,10 +343,11 @@ class ProfileViewset(GenericViewSet):
                     'role': Profile.Role.undefined
                 }
             )
+
             data.update({
                 'username': user.username,
                 'id': user.id,
-                'role': profile.role,
+                'role': profile.role
             })
 
         return Response(data)
